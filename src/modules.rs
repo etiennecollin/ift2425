@@ -19,7 +19,7 @@ pub enum Modules {
 impl Display for Modules {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Modules::ExprEval => write!(f, "Expression Evaluator"),
+            Modules::ExprEval => write!(f, "Mathematical Evaluator"),
             Modules::Placeholder => write!(f, "Placeholder"),
         }
     }

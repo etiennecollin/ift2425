@@ -1,6 +1,10 @@
 use std::fmt::{self, Display, Formatter};
 
 use crossterm::event::KeyEvent;
+use evalexpr::{
+    build_operator_tree, eval_with_context_mut, math_consts_context, DefaultNumericTypes,
+    HashMapContext, Value,
+};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Rect},
@@ -10,6 +14,9 @@ use ratatui::{
 use tui_textarea::TextArea;
 
 use super::theme::Theme;
+
+const EXPR_AREA_TITLE: &str = "Expression";
+const CONTEXT_AREA_TITLE: &str = "Context";
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 enum ComputeState {
@@ -41,8 +48,8 @@ pub enum CurrentField {
 #[derive(Debug)]
 pub struct MathEvalModule {
     expr_area: TextArea<'static>,
-    x_area: TextArea<'static>,
-    result: f64,
+    context_area: TextArea<'static>,
+    result: Value,
     compute_state: ComputeState,
     current_field: CurrentField,
 }
@@ -50,21 +57,21 @@ pub struct MathEvalModule {
 impl Default for MathEvalModule {
     fn default() -> Self {
         let mut expr_area = TextArea::default();
-        expr_area.set_placeholder_text("Enter a valid expression (e.g. pi * x^e + 1)");
+        expr_area.set_placeholder_text("Enter a valid expression (e.g. math::sin(x^E + y) + PI)");
         expr_area.set_cursor_style(Theme::UNSELECTED_BG);
-        expr_area.set_block(Theme::block(Theme::SELECTED_FG).title("Mathematical Expression"));
+        expr_area.set_block(Theme::block(Theme::SELECTED_FG).title(EXPR_AREA_TITLE));
 
         let mut x_area = TextArea::default();
         x_area.set_placeholder_text(
-            "Enter a valid expression that evaluates to a number (e.g. 1.56 * ln(pi)^asin(e/3))",
+            "Enter a valid expression (e.g. x = 1.56 * math::ln(PI); y = 3^math::asin(E/3))",
         );
         x_area.set_cursor_style(Theme::UNSELECTED_BG);
-        x_area.set_block(Theme::block(Theme::UNSELECTED_FG).title("Value of X"));
+        x_area.set_block(Theme::block(Theme::UNSELECTED_FG).title(CONTEXT_AREA_TITLE));
 
         Self {
             expr_area,
-            x_area,
-            result: 0.0,
+            context_area: x_area,
+            result: Value::Empty,
             compute_state: ComputeState::Idle,
             current_field: CurrentField::Expression,
         }
@@ -73,19 +80,20 @@ impl Default for MathEvalModule {
 
 impl MathEvalModule {
     pub fn run(&mut self) {
-        let (func, x) = match self.parse_expr() {
-            Ok((func, x)) => (func, x),
+        self.compute_state = ComputeState::Computing;
+        match self.parse_expr() {
+            Ok(()) => (),
             Err(()) => return,
         };
-
-        self.compute_state = ComputeState::Computing;
-        self.result = func(x);
         self.compute_state = ComputeState::Done;
     }
 
-    fn parse_expr(&mut self) -> Result<(impl Fn(f64) -> f64, f64), ()> {
-        // Get the first line of the textarea
-        let line = match self.expr_area.lines().first() {
+    fn parse_expr(&mut self) -> Result<(), ()> {
+        let mut context: HashMapContext<DefaultNumericTypes> =
+            math_consts_context!().expect("Error creating context. This should never happen.");
+
+        // Get the contents of the expression textarea
+        let expr_str = match self.expr_area.lines().first() {
             Some(line) => line,
             None => {
                 self.compute_state = ComputeState::Error("Empty expression".to_string());
@@ -94,7 +102,7 @@ impl MathEvalModule {
         };
 
         // Parse the expression into a mathematical expression
-        let expr: meval::Expr = match line.parse() {
+        let expr = match build_operator_tree::<DefaultNumericTypes>(expr_str) {
             Ok(expr) => expr,
             Err(e) => {
                 self.compute_state = ComputeState::Error(format!("Expression error: {}", e));
@@ -102,39 +110,36 @@ impl MathEvalModule {
             }
         };
 
-        // Use the character `x` as the variable for the function expression
-        let func = match expr.bind("x") {
-            Ok(func) => func,
-            Err(e) => {
-                self.compute_state = ComputeState::Error(format!("Expression error: {}", e));
-                return Err(());
-            }
-        };
-
-        // Get the value of `x` from the module
-        let line = match self.x_area.lines().first() {
+        // Get the contents of the context textarea
+        let context_str = match self.context_area.lines().first() {
             Some(line) => line,
-            None => {
-                self.compute_state = ComputeState::Error("Empty x value".to_string());
-                return Err(());
-            }
+            None => "",
         };
 
-        let x: f64 = match meval::eval_str(line) {
+        // Add the context_str to the context
+        match eval_with_context_mut(context_str, &mut context) {
+            Ok(_) => (),
+            Err(e) => {
+                self.compute_state = ComputeState::Error(format!("Context error: {}", e));
+                return Err(());
+            }
+        }
+
+        self.result = match expr.eval_with_context(&context) {
             Ok(x) => x,
             Err(e) => {
-                self.compute_state = ComputeState::Error(format!("X value error: {}", e));
+                self.compute_state = ComputeState::Error(format!("Evaluation error: {}", e));
                 return Err(());
             }
         };
 
-        Ok((func, x))
+        Ok(())
     }
 
     pub fn input(&mut self, c: KeyEvent) {
         match self.current_field {
             CurrentField::Expression => self.expr_area.input(c),
-            CurrentField::Value => self.x_area.input(c),
+            CurrentField::Value => self.context_area.input(c),
         };
     }
 
@@ -161,12 +166,12 @@ impl MathEvalModule {
             CurrentField::Expression => {
                 self.expr_area.set_cursor_style(Theme::UNSELECTED_BG);
                 self.expr_area
-                    .set_block(Theme::block(Theme::UNSELECTED_FG).title("Mathematical Expression"));
+                    .set_block(Theme::block(Theme::UNSELECTED_FG).title(EXPR_AREA_TITLE));
             }
             CurrentField::Value => {
-                self.x_area.set_cursor_style(Theme::UNSELECTED_BG);
-                self.x_area
-                    .set_block(Theme::block(Theme::UNSELECTED_FG).title("Value of X"))
+                self.context_area.set_cursor_style(Theme::UNSELECTED_BG);
+                self.context_area
+                    .set_block(Theme::block(Theme::UNSELECTED_FG).title(CONTEXT_AREA_TITLE));
             }
         }
     }
@@ -176,12 +181,12 @@ impl MathEvalModule {
             CurrentField::Expression => {
                 self.expr_area.set_cursor_style(Theme::SELECTED_BG);
                 self.expr_area
-                    .set_block(Theme::block(Theme::SELECTED_FG).title("Mathematical Expression"));
+                    .set_block(Theme::block(Theme::SELECTED_FG).title(EXPR_AREA_TITLE));
             }
             CurrentField::Value => {
-                self.x_area.set_cursor_style(Theme::SELECTED_BG);
-                self.x_area
-                    .set_block(Theme::block(Theme::SELECTED_FG).title("Value of X"))
+                self.context_area.set_cursor_style(Theme::SELECTED_BG);
+                self.context_area
+                    .set_block(Theme::block(Theme::SELECTED_FG).title(CONTEXT_AREA_TITLE))
             }
         }
     }
@@ -191,12 +196,12 @@ impl MathEvalModule {
             CurrentField::Expression => {
                 self.expr_area.set_cursor_style(Theme::INSERT_BG);
                 self.expr_area
-                    .set_block(Theme::block(Theme::INSERT_FG).title("Mathematical Expression"));
+                    .set_block(Theme::block(Theme::INSERT_FG).title(EXPR_AREA_TITLE))
             }
             CurrentField::Value => {
-                self.x_area.set_cursor_style(Theme::INSERT_BG);
-                self.x_area
-                    .set_block(Theme::block(Theme::INSERT_FG).title("Value of X"))
+                self.context_area.set_cursor_style(Theme::INSERT_BG);
+                self.context_area
+                    .set_block(Theme::block(Theme::INSERT_FG).title(CONTEXT_AREA_TITLE))
             }
         }
     }
@@ -232,7 +237,7 @@ impl Widget for &MathEvalModule {
 
         // Render everything
         self.expr_area.render(expr_area, buf);
-        self.x_area.render(x_area, buf);
+        self.context_area.render(x_area, buf);
         result.render(result_area, buf);
         status.render(error_area, buf);
     }

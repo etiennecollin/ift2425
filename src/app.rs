@@ -124,6 +124,18 @@ impl App {
                         _ => {}
                     },
                     Mode::Insert => match key.code {
+                        KeyCode::Tab => {
+                            self.end_input();
+                            self.menu_module.next_module();
+                            let index = self.menu_module.get_selected_module();
+                            self.current_module = MODULES[index];
+                        }
+                        KeyCode::BackTab => {
+                            self.end_input();
+                            self.menu_module.prev_module();
+                            let index = self.menu_module.get_selected_module();
+                            self.current_module = MODULES[index];
+                        }
                         KeyCode::Esc | KeyCode::Enter => self.end_input(),
                         _ => self.input(*key),
                     },

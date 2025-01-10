@@ -14,8 +14,8 @@ crossterm = { version = "0.28.1", features = ["event-stream"] }
 tokio = { version = "1.42.0", features = ["rt-multi-thread", "macros"] }
 tokio-stream = "0.1.17"
 ratatui = { version = "0.29.0" }
-meval = "0.2.0"
 tui-textarea = "0.7.0"
 strum = { version = "0.26.3", features = ["derive"] }
+evalexpr = "12.0.2"
 # evalexpr = "12.0.2"
 
