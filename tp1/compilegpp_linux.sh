@@ -14,7 +14,7 @@ if [[ "$file" != *.cpp ]]; then
     exit 1
 fi
 
-file_no_ext="$(basename $1 .cpp)"
+file_no_ext="$(basename $file .cpp)"
 echo "Compiling ${file}"
 
 # Get output code of the following command
