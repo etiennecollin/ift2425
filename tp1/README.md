@@ -5,14 +5,15 @@
 ## Compilation
 
 ```bash
-chmod +x ./compilegcc.sh
-./compilegcc.sh TP1-IFT2425-I.1
+./compilegpp.sh <cpp-file-to-compile>
 ```
+
+> If the file is not executable, run `chmod +x ./compilegpp.sh`.
 
 ## Exécution
 
 Pour executer le programme
 
 ```bash
-./TP1-IFT2425-I.1
+./<compiled-executable>
 ```
