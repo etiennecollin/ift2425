@@ -70,12 +70,12 @@ if [ "$file" = "" ] || [ ! -f "$file" ]; then
 fi
 
 # Make sure the file is a cpp file
-if [[ "$file" != *.cpp ]]; then
+if [[ "$file" != *.c ]]; then
     echo "Error: File is not a cpp file"
     exit 1
 fi
 
-file_no_ext=$(basename $file .cpp)
+file_no_ext="$(basename $file .c)"
 echo "Compiling ${file} for ${target}..."
 
 # Get output code of the following command
