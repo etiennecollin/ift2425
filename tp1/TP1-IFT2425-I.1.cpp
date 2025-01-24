@@ -1,5 +1,5 @@
 //------------------------------------------------------
-// module  : Tp-IFT2425-I.1.c
+// module  : Tp-IFT2425-I.1.cpp
 // author  : Etienne Collin & Justin Villeneuve
 // date    : 2025-01-23
 // version : 1.0
