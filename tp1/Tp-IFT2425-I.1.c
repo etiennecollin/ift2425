@@ -36,23 +36,26 @@
 // #include <X11/Xatom.h>
 // #include <X11/cursorfont.h>
 
-Display* display;
+Display *display;
 int screen_num;
 int depth;
 Window root;
-Visual* visual;
+Visual *visual;
 GC gc;
 
 /************************************************************************/
 /* OPEN_DISPLAY()							*/
 /************************************************************************/
-int open_display() {
-    if ((display = XOpenDisplay(NULL)) == NULL) {
+int open_display()
+{
+    if ((display = XOpenDisplay(NULL)) == NULL)
+    {
         printf("Connection impossible\n");
         return (-1);
     }
 
-    else {
+    else
+    {
         screen_num = DefaultScreen(display);
         visual = DefaultVisual(display, screen_num);
         depth = DefaultDepth(display, screen_num);
@@ -63,22 +66,25 @@ int open_display() {
 
 /************************************************************************/
 /* FABRIQUE_WINDOW()							*/
-/* Cette fonction crée une fenetre X et l'affiche à l'écran.	        */
+/* Cette fonction crï¿½e une fenetre X et l'affiche ï¿½ l'ï¿½cran.	        */
 /************************************************************************/
-Window fabrique_window(char* nom_fen, int x, int y, int width, int height, int zoom) {
+Window fabrique_window(char *nom_fen, int x, int y, int width, int height, int zoom)
+{
     Window win;
     XSizeHints size_hints;
     XWMHints wm_hints;
     XClassHint class_hints;
     XTextProperty windowName, iconName;
 
-    char* name = nom_fen;
+    char *name = nom_fen;
 
-    if (zoom < 0) {
+    if (zoom < 0)
+    {
         width /= -zoom;
         height /= -zoom;
     }
-    if (zoom > 0) {
+    if (zoom > 0)
+    {
         width *= zoom;
         height *= zoom;
     }
@@ -111,33 +117,38 @@ Window fabrique_window(char* nom_fen, int x, int y, int width, int height, int z
 
 /****************************************************************************/
 /* CREE_XIMAGE()							    */
-/* Crée une XImage à partir d'un tableau de float                           */
+/* Crï¿½e une XImage ï¿½ partir d'un tableau de float                           */
 /* L'image peut subir un zoom.						    */
 /****************************************************************************/
-XImage* cree_Ximage(float** mat, int z, int length, int width) {
+XImage *cree_Ximage(float **mat, int z, int length, int width)
+{
     int lgth, wdth, lig, col, zoom_col, zoom_lig;
     float somme;
     unsigned char pix;
-    unsigned char* dat;
-    XImage* imageX;
+    unsigned char *dat;
+    XImage *imageX;
 
     /*Zoom positiv*/
     /*------------*/
-    if (z > 0) {
+    if (z > 0)
+    {
         lgth = length * z;
         wdth = width * z;
 
-        dat = (unsigned char*)malloc(lgth * (wdth * 4) * sizeof(unsigned char));
-        if (dat == NULL) {
+        dat = (unsigned char *)malloc(lgth * (wdth * 4) * sizeof(unsigned char));
+        if (dat == NULL)
+        {
             printf("Impossible d'allouer de la memoire.");
             exit(-1);
         }
 
         for (lig = 0; lig < lgth; lig = lig + z)
-            for (col = 0; col < wdth; col = col + z) {
+            for (col = 0; col < wdth; col = col + z)
+            {
                 pix = (unsigned char)mat[lig / z][col / z];
                 for (zoom_lig = 0; zoom_lig < z; zoom_lig++)
-                    for (zoom_col = 0; zoom_col < z; zoom_col++) {
+                    for (zoom_col = 0; zoom_col < z; zoom_col++)
+                    {
                         dat[((lig + zoom_lig) * wdth * 4) + ((4 * (col + zoom_col)) + 0)] = pix;
                         dat[((lig + zoom_lig) * wdth * 4) + ((4 * (col + zoom_col)) + 1)] = pix;
                         dat[((lig + zoom_lig) * wdth * 4) + ((4 * (col + zoom_col)) + 2)] = pix;
@@ -148,22 +159,26 @@ XImage* cree_Ximage(float** mat, int z, int length, int width) {
 
     /*Zoom negatifv*/
     /*------------*/
-    else {
+    else
+    {
         z = -z;
         lgth = (length / z);
         wdth = (width / z);
 
-        dat = (unsigned char*)malloc(lgth * (wdth * 4) * sizeof(unsigned char));
-        if (dat == NULL) {
+        dat = (unsigned char *)malloc(lgth * (wdth * 4) * sizeof(unsigned char));
+        if (dat == NULL)
+        {
             printf("Impossible d'allouer de la memoire.");
             exit(-1);
         }
 
         for (lig = 0; lig < (lgth * z); lig = lig + z)
-            for (col = 0; col < (wdth * z); col = col + z) {
+            for (col = 0; col < (wdth * z); col = col + z)
+            {
                 somme = 0.0;
                 for (zoom_lig = 0; zoom_lig < z; zoom_lig++)
-                    for (zoom_col = 0; zoom_col < z; zoom_col++) somme += mat[lig + zoom_lig][col + zoom_col];
+                    for (zoom_col = 0; zoom_col < z; zoom_col++)
+                        somme += mat[lig + zoom_lig][col + zoom_col];
 
                 somme /= (z * z);
                 dat[((lig / z) * wdth * 4) + ((4 * (col / z)) + 0)] = (unsigned char)somme;
@@ -173,7 +188,7 @@ XImage* cree_Ximage(float** mat, int z, int length, int width) {
             }
     } /*--------------------------------------------------------*/
 
-    imageX = XCreateImage(display, visual, depth, ZPixmap, 0, (char*)dat, wdth, lgth, 16, wdth * 4);
+    imageX = XCreateImage(display, visual, depth, ZPixmap, 0, (char *)dat, wdth, lgth, 16, wdth * 4);
     return (imageX);
 }
 
@@ -183,8 +198,9 @@ XImage* cree_Ximage(float** mat, int z, int length, int width) {
 //---------------------------------------------------------
 //  alloue de la memoire pour une matrice 1d de float
 //----------------------------------------------------------
-float* fmatrix_allocate_1d(int hsize) {
-    float* matrix;
+float *fmatrix_allocate_1d(int hsize)
+{
+    float *matrix;
     matrix = new float[hsize];
     return matrix;
 }
@@ -192,25 +208,28 @@ float* fmatrix_allocate_1d(int hsize) {
 //----------------------------------------------------------
 //  alloue de la memoire pour une matrice 2d de float
 //----------------------------------------------------------
-float** fmatrix_allocate_2d(int vsize, int hsize) {
-    float** matrix;
-    float* imptr;
+float **fmatrix_allocate_2d(int vsize, int hsize)
+{
+    float **matrix;
+    float *imptr;
 
-    matrix = new float*[vsize];
+    matrix = new float *[vsize];
     imptr = new float[(hsize) * (vsize)];
-    for (int i = 0; i < vsize; i++, imptr += hsize) matrix[i] = imptr;
+    for (int i = 0; i < vsize; i++, imptr += hsize)
+        matrix[i] = imptr;
     return matrix;
 }
 
 //----------------------------------------------------------
 // libere la memoire de la matrice 1d de float
 //----------------------------------------------------------
-void free_fmatrix_1d(float* pmat) { delete[] pmat; }
+void free_fmatrix_1d(float *pmat) { delete[] pmat; }
 
 //----------------------------------------------------------
 // libere la memoire de la matrice 2d de float
 //----------------------------------------------------------
-void free_fmatrix_2d(float** pmat) {
+void free_fmatrix_2d(float **pmat)
+{
     delete[] (pmat[0]);
     delete[] pmat;
 }
@@ -218,10 +237,11 @@ void free_fmatrix_2d(float** pmat) {
 //----------------------------------------------------------
 // Sauvegarde de l'image de nom <name> au format pgm
 //----------------------------------------------------------
-void SaveImagePgm(char* bruit, char* name, float** mat, int lgth, int wdth) {
+void SaveImagePgm(char *bruit, char *name, float **mat, int lgth, int wdth)
+{
     int i, j;
     char buff[300];
-    FILE* fic;
+    FILE *fic;
 
     //--extension--
     strcpy(buff, bruit);
@@ -230,7 +250,8 @@ void SaveImagePgm(char* bruit, char* name, float** mat, int lgth, int wdth) {
 
     //--ouverture fichier--
     fic = fopen(buff, "wb");
-    if (fic == NULL) {
+    if (fic == NULL)
+    {
         printf("Probleme dans la sauvegarde de %s", buff);
         exit(-1);
     }
@@ -244,7 +265,8 @@ void SaveImagePgm(char* bruit, char* name, float** mat, int lgth, int wdth) {
 
     //--enregistrement--
     for (i = 0; i < lgth; i++)
-        for (j = 0; j < wdth; j++) fprintf(fic, "%c", (char)mat[i][j]);
+        for (j = 0; j < wdth; j++)
+            fprintf(fic, "%c", (char)mat[i][j]);
 
     //--fermeture fichier--
     fclose(fic);
@@ -253,7 +275,8 @@ void SaveImagePgm(char* bruit, char* name, float** mat, int lgth, int wdth) {
 //----------------------------------------------------------
 // Recal                                                    *
 //----------------------------------------------------------
-void Recal(float** mat, int lgth, int wdth) {
+void Recal(float **mat, int lgth, int wdth)
+{
     int i, j;
     float max, min, tmp;
     ;
@@ -262,27 +285,32 @@ void Recal(float** mat, int lgth, int wdth) {
     min = mat[0][0];
     for (i = 0; i < lgth; i++)
         for (j = 0; j < wdth; j++)
-            if (mat[i][j] < min) min = mat[i][j];
+            if (mat[i][j] < min)
+                min = mat[i][j];
 
     // plus min
     for (i = 0; i < lgth; i++)
-        for (j = 0; j < wdth; j++) mat[i][j] -= min;
+        for (j = 0; j < wdth; j++)
+            mat[i][j] -= min;
 
     // Recherche du max
     max = mat[0][0];
     for (i = 0; i < lgth; i++)
         for (j = 0; j < wdth; j++)
-            if (mat[i][j] > max) max = mat[i][j];
+            if (mat[i][j] > max)
+                max = mat[i][j];
 
     // Recalibre la matrice
     for (i = 0; i < lgth; i++)
-        for (j = 0; j < wdth; j++) mat[i][j] *= (255 / max);
+        for (j = 0; j < wdth; j++)
+            mat[i][j] *= (255 / max);
 }
 
 //----------------------------------------------------------
 //  Egalisation Histogramme
 //----------------------------------------------------------
-void Egalise(float** img, int lgth, int wdth, int thresh) {
+void Egalise(float **img, int lgth, int wdth, int thresh)
+{
     int i, j;
     float tmp;
     float nb;
@@ -290,35 +318,81 @@ void Egalise(float** img, int lgth, int wdth, int thresh) {
     float FnctRept[256];
 
     // Calcul Histogramme Ng
-    for (i = 0; i < 256; i++) HistoNg[i] = 0.0;
+    for (i = 0; i < 256; i++)
+        HistoNg[i] = 0.0;
 
     nb = 0;
     for (i = 0; i < lgth; i++)
-        for (j = 0; j < wdth; j++) {
+        for (j = 0; j < wdth; j++)
+        {
             tmp = img[i][j];
-            if (tmp > thresh) {
+            if (tmp > thresh)
+            {
                 HistoNg[(int)(tmp)]++;
                 nb++;
             }
         }
 
-    for (i = 0; i < 256; i++) HistoNg[i] /= (float)(nb);
+    for (i = 0; i < 256; i++)
+        HistoNg[i] /= (float)(nb);
 
     // Calcul Fnct Repartition
-    for (i = 0; i < 256; i++) FnctRept[i] = 0.0;
+    for (i = 0; i < 256; i++)
+        FnctRept[i] = 0.0;
 
-    for (i = 0; i < 256; i++) {
+    for (i = 0; i < 256; i++)
+    {
         if (i > 0)
             FnctRept[i] = FnctRept[i - 1] + HistoNg[i];
         else
             FnctRept[i] = FnctRept[i];
     }
 
-    for (i = 0; i < 256; i++) FnctRept[i] = (int)((FnctRept[i] * 255) + 0.5);
+    for (i = 0; i < 256; i++)
+        FnctRept[i] = (int)((FnctRept[i] * 255) + 0.5);
 
     // Egalise
     for (i = 0; i < lgth; i++)
-        for (j = 0; j < wdth; j++) img[i][j] = FnctRept[(int)(img[i][j])];
+        for (j = 0; j < wdth; j++)
+            img[i][j] = FnctRept[(int)(img[i][j])];
+}
+
+//----------------------------------------------------------
+//----------------------------------------------------------
+// AUXILARY FUNCTIONS --------------------------------------
+//----------------------------------------------------------
+//----------------------------------------------------------
+
+double f(double c_mv, double *y, size_t n) // n is the size of array y
+{
+    // sum1 : y_i^(c_mv) ln(y_i)
+    double sum1 = 0;
+    for (int i = 0; i < n; i++)
+    {
+        sum1 += pow(y[i], c_mv) * log(y[i]);
+    }
+
+    // sum2 : y_i^(c_mv)
+    double sum2 = 0;
+    for (int i = 0; i < n; i++)
+    {
+        sum2 += pow(y[i], c_mv);
+    }
+
+    // sum3 : ln(y_i)
+    double sum3 = 0;
+    for (int i = 0; i < n; i++)
+    {
+        sum3 += log(y[i]);
+    }
+
+    return (sum1 / sum2) - (1 / c_mv) - (sum3 / n);
+}
+
+double derivativef(double x, double *y, size_t n)
+{
+    double h = pow(10, -5);
+    return (f(x + h, y, n) - f(x, y, n)) / h;
 }
 
 //----------------------------------------------------------
@@ -326,7 +400,8 @@ void Egalise(float** img, int lgth, int wdth, int thresh) {
 // PROGRAMME PRINCIPAL -------------------------------------
 //----------------------------------------------------------
 //----------------------------------------------------------
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
     int i, j, k;
     int flag_graph;
     int zoom;
@@ -335,32 +410,49 @@ int main(int argc, char** argv) {
     //------------
     XEvent ev;
     Window win_ppicture;
-    XImage* x_ppicture;
+    XImage *x_ppicture;
     char nomfen_ppicture[100];
     int length, width;
 
     length = width = 512;
-    float** Graph2D = fmatrix_allocate_2d(length, width);
+    float **Graph2D = fmatrix_allocate_2d(length, width);
     flag_graph = 1;
     zoom = 1;
 
     // Init
     for (i = 0; i < length; i++)
-        for (j = 0; j < width; j++) Graph2D[i][j] = 0.0;
+        for (j = 0; j < width; j++)
+            Graph2D[i][j] = 0.0;
 
     //--------------------------------------------------------------------------------
     // PROGRAMME ---------------------------------------------------------------------
     //--------------------------------------------------------------------------------
 
-    // Affichage dégradé de niveaux de gris dans Graph2D
+    // Affichage dï¿½gradï¿½ de niveaux de gris dans Graph2D
     for (int i = 0; i < length; i++)
-        for (int j = 0; j < width; j++) Graph2D[i][j] = j / 2.0;
+        for (int j = 0; j < width; j++)
+            Graph2D[i][j] = j / 2.0;
 
     //---------------------------
     // Algorithme NEWTON
     //---------------------------
 
-    // implementer ici
+    double y[] = {0.11, 0.24, 0.27, 0.52, 1.13, 1.54, 1.71, 1.84, 1.92, 2.01};
+    int n = 10;
+
+    double x1 = 0.25;
+    double x2 = 0;
+
+    double delta = pow(10, -5); // TODO : maybe change the tolerance (was not specified in the homework)
+    double epsilon = pow(10, -6);
+
+    while (fabs(x2 - x1) >= delta && fabs(f(x1, y, n)) >= epsilon && derivativef(x1, y, n) != 0) // TODO : add last condition
+    {
+        x2 = x1;
+        x1 = x1 - f(x1, y, n) / derivativef(x1, y, n);
+    }
+
+    return x1; // return the root
 
     //--------------------------------------------------------------------------------
     //---------------- visu sous XWINDOW ---------------------------------------------
@@ -370,35 +462,40 @@ int main(int argc, char** argv) {
     Recal(Graph2D, length, width);
     Egalise(Graph2D, length, width, 0.0);
 
-    if (flag_graph) {
+    if (flag_graph)
+    {
         // ouverture session graphique
-        if (open_display() < 0) printf(" Impossible d'ouvrir une session graphique");
+        if (open_display() < 0)
+            printf(" Impossible d'ouvrir une session graphique");
         sprintf(nomfen_ppicture, "Graphe : ");
         win_ppicture = fabrique_window(nomfen_ppicture, 10, 10, width, length, zoom);
         x_ppicture = cree_Ximage(Graph2D, zoom, length, width);
 
         // Sauvegarde
-        SaveImagePgm((char*)"", (char*)"FractalMandelbrot", Graph2D, length, width);
+        SaveImagePgm((char *)"", (char *)"FractalMandelbrot", Graph2D, length, width);
         printf("\n\n Pour quitter,appuyer sur la barre d'espace");
         fflush(stdout);
 
         // boucle d'evenements
-        for (;;) {
+        for (;;)
+        {
             XNextEvent(display, &ev);
-            switch (ev.type) {
-                case Expose:
-                    XPutImage(display, win_ppicture, gc, x_ppicture, 0, 0, 0, 0, x_ppicture->width, x_ppicture->height);
-                    break;
+            switch (ev.type)
+            {
+            case Expose:
+                XPutImage(display, win_ppicture, gc, x_ppicture, 0, 0, 0, 0, x_ppicture->width, x_ppicture->height);
+                break;
 
-                case KeyPress:
-                    XDestroyImage(x_ppicture);
+            case KeyPress:
+                XDestroyImage(x_ppicture);
 
-                    XFreeGC(display, gc);
-                    XCloseDisplay(display);
-                    flag_graph = 0;
-                    break;
+                XFreeGC(display, gc);
+                XCloseDisplay(display);
+                flag_graph = 0;
+                break;
             }
-            if (!flag_graph) break;
+            if (!flag_graph)
+                break;
         }
     }
 
