@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "Warning: You need to install XQuartz and run the compilation in xterm."
+echo -e "\033[33mWarning: You need to install XQuartz.\033[0m"
 
 file="$1"
 
