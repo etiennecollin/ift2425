@@ -1,15 +1,14 @@
 //------------------------------------------------------
-// module  : Tp-IFT2425-II.3.c
-// author  : Etienne Collin & Justin Villeneuve
-// date    : 2025-01-23
-// version : 1.0
-// language: C++
-// note    :
+// Module  : Tp-IFT2425-II.3.c
+// Author  : Etienne Collin & Justin Villeneuve
+// Date    : 2025-01-23
+// Version : 1.0
+// Language: C++
+// Note    :
 //------------------------------------------------------
-//
 
 //------------------------------------------------
-// FICHIERS INCLUS -------------------------------
+// FICHIERS INCLUS
 //------------------------------------------------
 #include <math.h>
 #include <stdio.h>
@@ -17,17 +16,18 @@
 #include <string.h>
 #include <time.h>
 
+#include <cstdio>
 #include <iostream>
 #include <new>
 
 //------------------------------------------------
-// DEFINITIONS -----------------------------------
+// DEFINITIONS
 //------------------------------------------------
 #define CARRE(X) ((X) * (X))
 #define CUBE(X) ((X) * (X) * (X))
 
 //-------------------------
-//--- Windows -------------
+// Windows
 //-------------------------
 // #include <X11/X.h>
 // #include <X11/Xlib.h>
@@ -44,15 +44,13 @@ Visual* visual;
 GC gc;
 
 /************************************************************************/
-/* OPEN_DISPLAY()							*/
+/* OPEN_DISPLAY()                                                       */
 /************************************************************************/
 int open_display() {
     if ((display = XOpenDisplay(NULL)) == NULL) {
         printf("Connection impossible\n");
         return (-1);
-    }
-
-    else {
+    } else {
         screen_num = DefaultScreen(display);
         visual = DefaultVisual(display, screen_num);
         depth = DefaultDepth(display, screen_num);
@@ -62,8 +60,8 @@ int open_display() {
 }
 
 /************************************************************************/
-/* FABRIQUE_WINDOW()							*/
-/* Cette fonction crée une fenetre X et l'affiche à l'écran.	        */
+/* FABRIQUE_WINDOW()                                                    */
+/* Cette fonction crée une fenetre X et l'affiche à l'écran.            */
 /************************************************************************/
 Window fabrique_window(char* nom_fen, int x, int y, int width, int height, int zoom) {
     Window win;
@@ -110,9 +108,9 @@ Window fabrique_window(char* nom_fen, int x, int y, int width, int height, int z
 }
 
 /****************************************************************************/
-/* CREE_XIMAGE()							    */
+/* CREE_XIMAGE()                                                            */
 /* Crée une XImage à partir d'un tableau de float                           */
-/* L'image peut subir un zoom.						    */
+/* L'image peut subir un zoom.                                              */
 /****************************************************************************/
 XImage* cree_Ximage(float** mat, int z, int length, int width) {
     int lgth, wdth, lig, col, zoom_col, zoom_lig;
@@ -121,8 +119,7 @@ XImage* cree_Ximage(float** mat, int z, int length, int width) {
     unsigned char* dat;
     XImage* imageX;
 
-    /*Zoom positiv*/
-    /*------------*/
+    // Zoom positiv else Zoom negatifv
     if (z > 0) {
         lgth = length * z;
         wdth = width * z;
@@ -133,22 +130,20 @@ XImage* cree_Ximage(float** mat, int z, int length, int width) {
             exit(-1);
         }
 
-        for (lig = 0; lig < lgth; lig = lig + z)
+        for (lig = 0; lig < lgth; lig = lig + z) {
             for (col = 0; col < wdth; col = col + z) {
                 pix = (unsigned char)mat[lig / z][col / z];
-                for (zoom_lig = 0; zoom_lig < z; zoom_lig++)
+                for (zoom_lig = 0; zoom_lig < z; zoom_lig++) {
                     for (zoom_col = 0; zoom_col < z; zoom_col++) {
                         dat[((lig + zoom_lig) * wdth * 4) + ((4 * (col + zoom_col)) + 0)] = pix;
                         dat[((lig + zoom_lig) * wdth * 4) + ((4 * (col + zoom_col)) + 1)] = pix;
                         dat[((lig + zoom_lig) * wdth * 4) + ((4 * (col + zoom_col)) + 2)] = pix;
                         dat[((lig + zoom_lig) * wdth * 4) + ((4 * (col + zoom_col)) + 3)] = pix;
                     }
+                }
             }
-    } /*--------------------------------------------------------*/
-
-    /*Zoom negatifv*/
-    /*------------*/
-    else {
+        }
+    } else {
         z = -z;
         lgth = (length / z);
         wdth = (width / z);
@@ -159,11 +154,14 @@ XImage* cree_Ximage(float** mat, int z, int length, int width) {
             exit(-1);
         }
 
-        for (lig = 0; lig < (lgth * z); lig = lig + z)
+        for (lig = 0; lig < (lgth * z); lig = lig + z) {
             for (col = 0; col < (wdth * z); col = col + z) {
                 somme = 0.0;
-                for (zoom_lig = 0; zoom_lig < z; zoom_lig++)
-                    for (zoom_col = 0; zoom_col < z; zoom_col++) somme += mat[lig + zoom_lig][col + zoom_col];
+                for (zoom_lig = 0; zoom_lig < z; zoom_lig++) {
+                    for (zoom_col = 0; zoom_col < z; zoom_col++) {
+                        somme += mat[lig + zoom_lig][col + zoom_col];
+                    }
+                }
 
                 somme /= (z * z);
                 dat[((lig / z) * wdth * 4) + ((4 * (col / z)) + 0)] = (unsigned char)somme;
@@ -171,7 +169,8 @@ XImage* cree_Ximage(float** mat, int z, int length, int width) {
                 dat[((lig / z) * wdth * 4) + ((4 * (col / z)) + 2)] = (unsigned char)somme;
                 dat[((lig / z) * wdth * 4) + ((4 * (col / z)) + 3)] = (unsigned char)somme;
             }
-    } /*--------------------------------------------------------*/
+        }
+    }
 
     imageX = XCreateImage(display, visual, depth, ZPixmap, 0, (char*)dat, wdth, lgth, 16, wdth * 4);
     return (imageX);
@@ -180,8 +179,8 @@ XImage* cree_Ximage(float** mat, int z, int length, int width) {
 //-------------------------//
 //-- Matrice de Flottant --//
 //-------------------------//
-//---------------------------------------------------------
-//  alloue de la memoire pour une matrice 1d de float
+//----------------------------------------------------------
+// Alloue de la memoire pour une matrice 1d de float
 //----------------------------------------------------------
 float* fmatrix_allocate_1d(int hsize) {
     float* matrix;
@@ -190,7 +189,7 @@ float* fmatrix_allocate_1d(int hsize) {
 }
 
 //----------------------------------------------------------
-//  alloue de la memoire pour une matrice 2d de float
+// Alloue de la memoire pour une matrice 2d de float
 //----------------------------------------------------------
 float** fmatrix_allocate_2d(int vsize, int hsize) {
     float** matrix;
@@ -198,17 +197,19 @@ float** fmatrix_allocate_2d(int vsize, int hsize) {
 
     matrix = new float*[vsize];
     imptr = new float[(hsize) * (vsize)];
-    for (int i = 0; i < vsize; i++, imptr += hsize) matrix[i] = imptr;
+    for (int i = 0; i < vsize; i++, imptr += hsize) {
+        matrix[i] = imptr;
+    }
     return matrix;
 }
 
 //----------------------------------------------------------
-// libere la memoire de la matrice 1d de float
+// Libere la memoire de la matrice 1d de float
 //----------------------------------------------------------
 void free_fmatrix_1d(float* pmat) { delete[] pmat; }
 
 //----------------------------------------------------------
-// libere la memoire de la matrice 2d de float
+// Libere la memoire de la matrice 2d de float
 //----------------------------------------------------------
 void free_fmatrix_2d(float** pmat) {
     delete[] (pmat[0]);
@@ -223,12 +224,12 @@ void SaveImagePgm(char* bruit, char* name, float** mat, int lgth, int wdth) {
     char buff[300];
     FILE* fic;
 
-    //--extension--
+    // Extension
     strcpy(buff, bruit);
     strcat(buff, name);
     strcat(buff, ".pgm");
 
-    //--ouverture fichier--
+    // Ouverture fichier
     fic = fopen(buff, "wb");
     if (fic == NULL) {
         printf("Probleme dans la sauvegarde de %s", buff);
@@ -236,51 +237,65 @@ void SaveImagePgm(char* bruit, char* name, float** mat, int lgth, int wdth) {
     }
     printf("\n Sauvegarde de %s au format pgm\n", buff);
 
-    //--sauvegarde de l'entete--
+    // Sauvegarde de l'entete
     fprintf(fic, "P5");
     fprintf(fic, "\n# IMG Module");
     fprintf(fic, "\n%d %d", wdth, lgth);
     fprintf(fic, "\n255\n");
 
-    //--enregistrement--
-    for (i = 0; i < lgth; i++)
-        for (j = 0; j < wdth; j++) fprintf(fic, "%c", (char)mat[i][j]);
+    // Enregistrement
+    for (i = 0; i < lgth; i++) {
+        for (j = 0; j < wdth; j++) {
+            fprintf(fic, "%c", (char)mat[i][j]);
+        }
+    }
 
-    //--fermeture fichier--
+    // Fermeture fichier
     fclose(fic);
 }
 
 //----------------------------------------------------------
-// Recal                                                    *
+// Recal
 //----------------------------------------------------------
 void Recal(float** mat, int lgth, int wdth) {
     int i, j;
     float max, min, tmp;
-    ;
 
     // Recherche du min
     min = mat[0][0];
-    for (i = 0; i < lgth; i++)
-        for (j = 0; j < wdth; j++)
-            if (mat[i][j] < min) min = mat[i][j];
+    for (i = 0; i < lgth; i++) {
+        for (j = 0; j < wdth; j++) {
+            if (mat[i][j] < min) {
+                min = mat[i][j];
+            }
+        }
+    }
 
-    // plus min
-    for (i = 0; i < lgth; i++)
-        for (j = 0; j < wdth; j++) mat[i][j] -= min;
+    // Plus min
+    for (i = 0; i < lgth; i++) {
+        for (j = 0; j < wdth; j++) {
+            mat[i][j] -= min;
+        }
+    }
 
     // Recherche du max
     max = mat[0][0];
-    for (i = 0; i < lgth; i++)
-        for (j = 0; j < wdth; j++)
+    for (i = 0; i < lgth; i++) {
+        for (j = 0; j < wdth; j++) {
             if (mat[i][j] > max) max = mat[i][j];
+        }
+    }
 
     // Recalibre la matrice
-    for (i = 0; i < lgth; i++)
-        for (j = 0; j < wdth; j++) mat[i][j] *= (255 / max);
+    for (i = 0; i < lgth; i++) {
+        for (j = 0; j < wdth; j++) {
+            mat[i][j] *= (255 / max);
+        }
+    }
 }
 
 //----------------------------------------------------------
-//  Egalisation Histogramme
+// Egalisation Histogramme
 //----------------------------------------------------------
 void Egalise(float** img, int lgth, int wdth, int thresh) {
     int i, j;
@@ -290,10 +305,12 @@ void Egalise(float** img, int lgth, int wdth, int thresh) {
     float FnctRept[256];
 
     // Calcul Histogramme Ng
-    for (i = 0; i < 256; i++) HistoNg[i] = 0.0;
+    for (i = 0; i < 256; i++) {
+        HistoNg[i] = 0.0;
+    }
 
     nb = 0;
-    for (i = 0; i < lgth; i++)
+    for (i = 0; i < lgth; i++) {
         for (j = 0; j < wdth; j++) {
             tmp = img[i][j];
             if (tmp > thresh) {
@@ -301,11 +318,16 @@ void Egalise(float** img, int lgth, int wdth, int thresh) {
                 nb++;
             }
         }
+    }
 
-    for (i = 0; i < 256; i++) HistoNg[i] /= (float)(nb);
+    for (i = 0; i < 256; i++) {
+        HistoNg[i] /= (float)(nb);
+    }
 
     // Calcul Fnct Repartition
-    for (i = 0; i < 256; i++) FnctRept[i] = 0.0;
+    for (i = 0; i < 256; i++) {
+        FnctRept[i] = 0.0;
+    }
 
     for (i = 0; i < 256; i++) {
         if (i > 0)
@@ -314,11 +336,16 @@ void Egalise(float** img, int lgth, int wdth, int thresh) {
             FnctRept[i] = FnctRept[i];
     }
 
-    for (i = 0; i < 256; i++) FnctRept[i] = (int)((FnctRept[i] * 255) + 0.5);
+    for (i = 0; i < 256; i++) {
+        FnctRept[i] = (int)((FnctRept[i] * 255) + 0.5);
+    }
 
     // Egalise
-    for (i = 0; i < lgth; i++)
-        for (j = 0; j < wdth; j++) img[i][j] = FnctRept[(int)(img[i][j])];
+    for (i = 0; i < lgth; i++) {
+        for (j = 0; j < wdth; j++) {
+            img[i][j] = FnctRept[(int)(img[i][j])];
+        }
+    }
 }
 
 //----------------------------------------------------------
@@ -328,7 +355,7 @@ void Egalise(float** img, int lgth, int wdth, int thresh) {
 //----------------------------------------------------------
 int main(int argc, char** argv) {
     int i, j, k;
-    int flag_graph;
+    bool flag_graph;
     int zoom;
 
     // Pour Xwindow
@@ -341,26 +368,32 @@ int main(int argc, char** argv) {
 
     length = width = 512;
     float** Graph2D = fmatrix_allocate_2d(length, width);
-    flag_graph = 1;
+    flag_graph = True;
     zoom = 1;
 
     // Init
-    for (i = 0; i < length; i++)
-        for (j = 0; j < width; j++) Graph2D[i][j] = 0.0;
+    for (i = 0; i < length; i++) {
+        for (j = 0; j < width; j++) {
+            Graph2D[i][j] = 0.0;
+        }
+    }
 
     //--------------------------------------------------------------------------------
     // PROGRAMME ---------------------------------------------------------------------
     //--------------------------------------------------------------------------------
 
     // Affichage dégradé de niveaux de gris dans Graph2D
-    for (int i = 0; i < length; i++)
-        for (int j = 0; j < width; j++) Graph2D[i][j] = j / 2.0;
+    for (int i = 0; i < length; i++) {
+        for (int j = 0; j < width; j++) {
+            Graph2D[i][j] = j / 2.0;
+        }
+    }
 
     //---------------------------
     // Algorithme NEWTON
     //---------------------------
 
-    // implementer ici
+    // TODO
 
     //--------------------------------------------------------------------------------
     //---------------- visu sous XWINDOW ---------------------------------------------
@@ -371,7 +404,7 @@ int main(int argc, char** argv) {
     Egalise(Graph2D, length, width, 0.0);
 
     if (flag_graph) {
-        // ouverture session graphique
+        // Ouverture session graphique
         if (open_display() < 0) printf(" Impossible d'ouvrir une session graphique");
         sprintf(nomfen_ppicture, "Graphe : ");
         win_ppicture = fabrique_window(nomfen_ppicture, 10, 10, width, length, zoom);
@@ -382,8 +415,8 @@ int main(int argc, char** argv) {
         printf("\n\n Pour quitter,appuyer sur la barre d'espace");
         fflush(stdout);
 
-        // boucle d'evenements
-        for (;;) {
+        // Boucle d'evenements
+        while (True) {
             XNextEvent(display, &ev);
             switch (ev.type) {
                 case Expose:
@@ -402,7 +435,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    // retour sans probleme
+    // Retour sans probleme
     printf("\n Fini... \n\n\n");
     return 0;
 }
