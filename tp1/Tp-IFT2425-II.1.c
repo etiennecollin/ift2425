@@ -367,15 +367,15 @@ void Egalise(float **img, int lgth, int wdth, int thresh) {
 //----------------------------------------------------------
 //----------------------------------------------------------
 
-// Takes a pixel as an argument. Returns the real part of the number
+// Takes a pixel as an argument. Returns the real part of the number c
 // associated with this pixel
-double find_real_part(int k, int l, int width) {
+double find_c_real_part(int k, int l, int width) {
   return 2.0 * (k - width / 1.35) / (width - 1);
 }
 
-// Takes a pixel as an argument. Returns the imaginary part of the number
+// Takes a pixel as an argument. Returns the imaginary part of the number c
 // associated with this pixel
-double find_imaginary_part(int k, int l, int length) {
+double find_c_imaginary_part(int k, int l, int length) {
   return 2.0 * (k - length / 2.0) / (length - 1);
 }
 
@@ -383,7 +383,8 @@ double calculate_modulus(double real_part, double imaginary_part) {
   return sqrt(pow(real_part, 2) + pow(imaginary_part, 2));
 }
 
-// Determines if a sequence diverges
+// Function used at each iteration to test if the sequence diverges, using
+// the modulus test
 bool is_divergent(double real_part, double imaginary_part) {
   double modulus = calculate_modulus(real_part, imaginary_part);
 
@@ -393,6 +394,46 @@ bool is_divergent(double real_part, double imaginary_part) {
 
   else
     return false; // Cannot conclude that the sequence diverges
+}
+
+// Calculates the next real number in the sequence
+// z[n+1] = z[n]^2 + c  =>  x[n+1] = x[n]^2 - y[n]^2 + Re(c)
+// x represent the real part of x_n
+// y represents the imaginary part of x_n
+double calculate_next_real(double c_real, double x, double y) {
+  return pow(x, 2) - pow(y, 2) + c_real;
+}
+
+// Calculates the next imaginary number in the sequence
+// z[n+1] = z[n]^2 + c  =>  y[n+1] = 2 * x[n] * y[n] + Im(c)
+// x represent the real part of x_n
+// y represents the imaginary part of x_n
+double calculate_next_imaginary(double c_imaginary, double x, double y) {
+  return 2 * x * y + c_imaginary;
+}
+
+// Determines if a pixel belongs to Mandlebrot's set
+bool is_in_mandelbrot(int k, int l, int length, int width,
+                      int num_of_iterations) {
+
+  // initialize sequence
+  double c_real = find_c_real_part(k, l, width);
+  double c_imaginary = find_c_imaginary_part(k, l, length);
+
+  // z[0] = 0
+  double x = 1;
+  double y = 0;
+
+  for (int i = 0; i < num_of_iterations; i++) {
+    x = calculate_next_real(c_real, x, y);
+    y = calculate_next_imaginary(c_imaginary, x, y);
+
+    if (is_divergent(x, y)) {
+      return false; // doesn't belong to Mandlebrot's set
+    }
+  }
+
+  return true; // belongs to Mandlebrot's set
 }
 
 //----------------------------------------------------------
