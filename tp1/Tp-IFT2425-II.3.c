@@ -91,7 +91,7 @@ Window fabrique_window(char *nom_fen, int x, int y, int width, int height, int z
     XStringListToTextProperty(&name, 1, &windowName);
     XStringListToTextProperty(&name, 1, &iconName);
     wm_hints.initial_state = NormalState;
-    wm_hints.input = True;
+    wm_hints.input = true;
     wm_hints.flags = StateHint | InputHint;
     class_hints.res_name = nom_fen;
     class_hints.res_class = nom_fen;
@@ -354,53 +354,57 @@ void Egalise(float **img, int lgth, int wdth, int thresh) {
 //----------------------------------------------------------
 //----------------------------------------------------------
 // Takes a pixel as an argument. Returns the real part of the number c
-// Associated with this pixel
-double find_c_real_part(int k, int width) { return 2.0 * (k - width / 1.35) / (width - 1.0); }
+// associated with this pixel
+double find_c_real_part(float k, int width) { return 2.0 * (k - width / 1.35) / (width - 1.0); }
 
 // Takes a pixel as an argument. Returns the imaginary part of the number c
-// Associated with this pixel
-double find_c_imaginary_part(int l, int length) { return 2.0 * (l - length / 2.0) / (length - 1.0); }
+// associated with this pixel
+double find_c_imaginary_part(float l, int length) { return 2.0 * (l - length / 2.0) / (length - 1.0); }
 
+// Takes a real number as an argument. Returns the pixel associated with this real number
+int find_i_from_real(double real, int width) { return real * (width - 1.0) / 2.0 + width / 1.35; }
+
+// Takes an imaginary number as an argument. Returns the pixel associated with this imaginary number
+int find_j_from_imaginary(double imaginary, int length) { return imaginary * (length - 1.0) / 2.0 + length / 2.0; }
+
+// Takes the real and imaginary parts of a number as arguments. Returns the modulus of the number
 double calculate_modulus(double real_part, double imaginary_part) {
     return sqrt(pow(real_part, 2) + pow(imaginary_part, 2));
 }
 
-// Function used at each iteration to test if the sequence diverges, using
-// The modulus test
-bool is_divergent(double real_part, double imaginary_part) {
-    double modulus = calculate_modulus(real_part, imaginary_part);
-    // The sequence diverges to infinity if the modulus of the number is greater than 2
-    // Else cannot conclude that the sequence diverges
-    return modulus > 2.0;
-}
-
 // Calculates the next real number in the sequence
-// Z[n+1] = z[n]^2 + c  =>  x[n+1] = x[n]^2 - y[n]^2 + Re(c)
-// X represent the real part of x_n
-// Y represents the imaginary part of x_n
+// z[n+1] = z[n]^2 + c  =>  x[n+1] = x[n]^2 - y[n]^2 + Re(c)
+// x represent the real part of x_n
+// y represents the imaginary part of x_n
 double calculate_next_real(double c_real, double real, double imaginary) {
     return pow(real, 2) - pow(imaginary, 2) + c_real;
 }
 
 // Calculates the next imaginary number in the sequence
-// Z[n+1] = z[n]^2 + c  =>  y[n+1] = 2 * x[n] * y[n] + Im(c)
-// X represent the real part of x_n
-// Y represents the imaginary part of x_n
+// z[n+1] = z[n]^2 + c  =>  y[n+1] = 2 * x[n] * y[n] + Im(c)
+// x represent the real part of x_n
+// y represents the imaginary part of x_n
 double calculate_next_imaginary(double c_imaginary, double real, double imaginary) {
     return 2.0 * real * imaginary + c_imaginary;
 }
 
+// Structure to represent a pixel's x,y coordinates
+typedef struct {
+    int x;
+    int y;
+} Pixel;
+
 // Determines if a pixel belongs to Mandlebrot's set
-bool is_in_mandelbrot(int k, int l, int length, int width, int num_of_iterations) {
+bool is_in_mandelbrot(float k, float l, int length, int width, int max_iterations, Pixel *pixels, int *pixels_index) {
     // Compute the real and imaginary parts of the number c associated with the pixel
     double c_real = find_c_real_part(k, width);
     double c_imaginary = find_c_imaginary_part(l, length);
 
     // Initialize the first number in the sequence
-    double real = 0;
-    double imaginary = 0;
+    double real = 0.0;
+    double imaginary = 0.0;
 
-    for (int i = 0; i < num_of_iterations; i++) {
+    for (int _ = 0; _ < max_iterations; _++) {
         // Compute next number in the sequence
         double new_real = calculate_next_real(c_real, real, imaginary);
         double new_imaginary = calculate_next_imaginary(c_imaginary, real, imaginary);
@@ -409,13 +413,24 @@ bool is_in_mandelbrot(int k, int l, int length, int width, int num_of_iterations
         real = new_real;
         imaginary = new_imaginary;
 
-        // If the sequence diverges, the pixel does not belong to Mandlebrot's set
-        if (is_divergent(real, imaginary)) {
+        // The sequence diverges to infinity if the modulus of the number is greater than 2
+        // Else, we cannot conclude that the sequence diverges
+        bool diverges = calculate_modulus(real, imaginary) > 2.0;
+        if (diverges) {
             return false;
+        }
+
+        // Store the x,y coordinates at each iteration
+        int i = find_i_from_real(real, width);
+        int j = find_j_from_imaginary(imaginary, length);
+        if (i >= 0 && i < width && j >= 0 && j < length) {
+            pixels[*pixels_index].x = i;
+            pixels[*pixels_index].y = j;
+            *pixels_index += 1;
         }
     }
 
-    // We have not found that the sequence diverges, so the pixel belongs to Mandlebrot's set
+    // We cannot conclude that the sequence diverges so the pixel belongs to Mandlebrot's set
     return true;
 }
 
@@ -425,7 +440,7 @@ bool is_in_mandelbrot(int k, int l, int length, int width, int num_of_iterations
 //----------------------------------------------------------
 //----------------------------------------------------------
 int main(int argc, char **argv) {
-    int i, j, k;
+    int i, j;
     bool flag_graph;
     int zoom;
 
@@ -439,7 +454,7 @@ int main(int argc, char **argv) {
 
     length = width = 512;
     float **Graph2D = fmatrix_allocate_2d(length, width);
-    flag_graph = True;
+    flag_graph = true;
     zoom = 1;
 
     // Init
@@ -454,13 +469,29 @@ int main(int argc, char **argv) {
     // ---------------------------------------------------------------------
     //--------------------------------------------------------------------------------
 
-    // Affichage dégradé de niveaux de gris dans Graph2D
-    for (int i = 0; i < length; i++) {
-        for (int j = 0; j < width; j++) {
-            if (is_in_mandelbrot(j, i, length, width, 200)) {
-                Graph2D[i][j] = 0.0;
-            } else {
-                Graph2D[i][j] = 255.0;
+    // Display sub-fractal of mandelbrot set
+    float delta = 0.10;
+    int max_iterations = 200;
+    bool select_in_mandelbrot = true;
+    Pixel pixels[max_iterations];  // Array to hold up to MAX_POINTS points
+    // We iterate over all of the pixels in the image
+    for (int i = 0; i < (int)(length / delta); i++) {
+        for (int j = 0; j < (int)(width / delta); j++) {
+            float k = i * delta;
+            float l = j * delta;
+
+            // Store list of x,y coordinates at each iteration
+            int pixels_index = 0;  // This will track how many points are in the array
+            bool in_mandelbrot = is_in_mandelbrot(k, l, length, width, max_iterations, pixels, &pixels_index);
+
+            // Skip the pixel or not
+            if (in_mandelbrot != select_in_mandelbrot) {
+                continue;
+            }
+
+            // Increment the pixel value for the visited pixels
+            for (int p = 0; p < pixels_index; p++) {
+                Graph2D[pixels[p].x][pixels[p].y] += 1.0;
             }
         }
     }
@@ -487,16 +518,14 @@ int main(int argc, char **argv) {
         fflush(stdout);
 
         // Boucle d'evenements
-        while (True) {
+        while (true) {
             XNextEvent(display, &ev);
             switch (ev.type) {
                 case Expose:
                     XPutImage(display, win_ppicture, gc, x_ppicture, 0, 0, 0, 0, x_ppicture->width, x_ppicture->height);
                     break;
-
                 case KeyPress:
                     XDestroyImage(x_ppicture);
-
                     XFreeGC(display, gc);
                     XCloseDisplay(display);
                     flag_graph = 0;

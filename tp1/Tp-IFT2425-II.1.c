@@ -91,7 +91,7 @@ Window fabrique_window(char *nom_fen, int x, int y, int width, int height, int z
     XStringListToTextProperty(&name, 1, &windowName);
     XStringListToTextProperty(&name, 1, &iconName);
     wm_hints.initial_state = NormalState;
-    wm_hints.input = True;
+    wm_hints.input = true;
     wm_hints.flags = StateHint | InputHint;
     class_hints.res_name = nom_fen;
     class_hints.res_class = nom_fen;
@@ -411,12 +411,12 @@ bool is_in_mandelbrot(int k, int l, int length, int width, int num_of_iterations
 
         // If the sequence diverges, the pixel does not belong to Mandlebrot's set
         if (is_divergent(real, imaginary)) {
-            return False;
+            return false;
         }
     }
 
     // We have not found that the sequence diverges, so the pixel belongs to Mandlebrot's set
-    return True;
+    return true;
 }
 
 //----------------------------------------------------------
@@ -439,7 +439,7 @@ int main(int argc, char **argv) {
 
     length = width = 512;
     float **Graph2D = fmatrix_allocate_2d(length, width);
-    flag_graph = True;
+    flag_graph = true;
     zoom = 1;
 
     // Init
@@ -487,16 +487,14 @@ int main(int argc, char **argv) {
         fflush(stdout);
 
         // Boucle d'evenements
-        while (True) {
+        while (true) {
             XNextEvent(display, &ev);
             switch (ev.type) {
                 case Expose:
                     XPutImage(display, win_ppicture, gc, x_ppicture, 0, 0, 0, 0, x_ppicture->width, x_ppicture->height);
                     break;
-
                 case KeyPress:
                     XDestroyImage(x_ppicture);
-
                     XFreeGC(display, gc);
                     XCloseDisplay(display);
                     flag_graph = 0;

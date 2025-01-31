@@ -91,7 +91,7 @@ Window fabrique_window(char *nom_fen, int x, int y, int width, int height, int z
     XStringListToTextProperty(&name, 1, &windowName);
     XStringListToTextProperty(&name, 1, &iconName);
     wm_hints.initial_state = NormalState;
-    wm_hints.input = True;
+    wm_hints.input = true;
     wm_hints.flags = StateHint | InputHint;
     class_hints.res_name = nom_fen;
     class_hints.res_class = nom_fen;
@@ -395,7 +395,7 @@ typedef struct {
 } Pixel;
 
 // Determines if a pixel belongs to Mandlebrot's set
-bool is_in_mandelbrot(float k, float l, int length, int width, int max_iterations, Pixel *points, int *points_index) {
+bool is_in_mandelbrot(float k, float l, int length, int width, int max_iterations, Pixel *pixels, int *pixels_index) {
     // Compute the real and imaginary parts of the number c associated with the pixel
     double c_real = find_c_real_part(k, width);
     double c_imaginary = find_c_imaginary_part(l, length);
@@ -417,23 +417,21 @@ bool is_in_mandelbrot(float k, float l, int length, int width, int max_iteration
         // Else, we cannot conclude that the sequence diverges
         bool diverges = calculate_modulus(real, imaginary) > 2.0;
         if (diverges) {
-            break;
+            return false;
         }
 
         // Store the x,y coordinates at each iteration
         int i = find_i_from_real(real, width);
         int j = find_j_from_imaginary(imaginary, length);
         if (i >= 0 && i < width && j >= 0 && j < length) {
-            points[*points_index].x = i;
-            points[*points_index].y = j;
-            *points_index += 1;
+            pixels[*pixels_index].x = i;
+            pixels[*pixels_index].y = j;
+            *pixels_index += 1;
         }
     }
 
-    // The sequence diverges to infinity if the modulus of the number is greater than 2
-    // Else, we cannot conclude that the sequence diverges so the pixel belongs to Mandlebrot's set
-    bool diverges = calculate_modulus(real, imaginary) > 2.0;
-    return !diverges;
+    // We cannot conclude that the sequence diverges so the pixel belongs to Mandlebrot's set
+    return true;
 }
 
 //----------------------------------------------------------
@@ -456,7 +454,7 @@ int main(int argc, char **argv) {
 
     length = width = 512;
     float **Graph2D = fmatrix_allocate_2d(length, width);
-    flag_graph = True;
+    flag_graph = true;
     zoom = 1;
 
     // Init
@@ -474,7 +472,7 @@ int main(int argc, char **argv) {
     // Display sub-fractal of mandelbrot set
     float delta = 0.10;
     int max_iterations = 200;
-    bool select_in_mandelbrot = true;
+    bool select_in_mandelbrot = false;
     Pixel pixels[max_iterations];  // Array to hold up to MAX_POINTS points
     // We iterate over all of the pixels in the image
     for (int i = 0; i < (int)(length / delta); i++) {
@@ -520,20 +518,18 @@ int main(int argc, char **argv) {
         fflush(stdout);
 
         // Boucle d'evenements
-        while (True) {
+        while (true) {
             XNextEvent(display, &ev);
             switch (ev.type) {
                 case Expose:
                     XPutImage(display, win_ppicture, gc, x_ppicture, 0, 0, 0, 0, x_ppicture->width, x_ppicture->height);
                     break;
-
-                    // case KeyPress:
-                    //     XDestroyImage(x_ppicture);
-                    //
-                    //     XFreeGC(display, gc);
-                    //     XCloseDisplay(display);
-                    //     flag_graph = 0;
-                    //     break;
+                case KeyPress:
+                    XDestroyImage(x_ppicture);
+                    XFreeGC(display, gc);
+                    XCloseDisplay(display);
+                    flag_graph = 0;
+                    break;
             }
             if (!flag_graph) break;
         }
