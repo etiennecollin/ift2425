@@ -400,7 +400,7 @@ bool is_in_mandelbrot(int k, int l, int length, int width, int num_of_iterations
     double real = 0;
     double imaginary = 0;
 
-    for (int i = 0; i < num_of_iterations; i++) {
+    for (int _ = 0; _ < num_of_iterations; _++) {
         // Compute next number in the sequence
         double new_real = calculate_next_real(c_real, real, imaginary);
         double new_imaginary = calculate_next_imaginary(c_imaginary, real, imaginary);
@@ -411,12 +411,12 @@ bool is_in_mandelbrot(int k, int l, int length, int width, int num_of_iterations
 
         // If the sequence diverges, the pixel does not belong to Mandlebrot's set
         if (is_divergent(real, imaginary)) {
-            return false;
+            return False;
         }
     }
 
     // We have not found that the sequence diverges, so the pixel belongs to Mandlebrot's set
-    return true;
+    return True;
 }
 
 //----------------------------------------------------------
@@ -454,7 +454,7 @@ int main(int argc, char **argv) {
     // ---------------------------------------------------------------------
     //--------------------------------------------------------------------------------
 
-    // Affichage dégradé de niveaux de gris dans Graph2D
+    // Display mandelbrot set
     for (int i = 0; i < length; i++) {
         for (int j = 0; j < width; j++) {
             if (is_in_mandelbrot(j, i, length, width, 200)) {
