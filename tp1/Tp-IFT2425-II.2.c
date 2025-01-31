@@ -361,7 +361,7 @@ double find_c_real_part(float k, int width) { return 2.0 * (k - width / 1.35) / 
 // associated with this pixel
 double find_c_imaginary_part(float l, int length) { return 2.0 * (l - length / 2.0) / (length - 1.0); }
 
-// Takes an real number as an argument. Returns the pixel associated with this real number
+// Takes a real number as an argument. Returns the pixel associated with this real number
 int find_i_from_real(double real, int width) { return real * (width - 1.0) / 2.0 + width / 1.35; }
 
 // Takes an imaginary number as an argument. Returns the pixel associated with this imaginary number
@@ -388,45 +388,21 @@ double calculate_next_imaginary(double c_imaginary, double real, double imaginar
     return 2.0 * real * imaginary + c_imaginary;
 }
 
+// Structure to represent a pixel's x,y coordinates
+typedef struct {
+    int x;
+    int y;
+} Pixel;
+
 // Determines if a pixel belongs to Mandlebrot's set
-bool is_in_mandelbrot(int k, int l, int length, int width, int max_iterations) {
+bool is_in_mandelbrot(int k, int l, int length, int width, int max_iterations, Pixel *points, int *points_index) {
     // Compute the real and imaginary parts of the number c associated with the pixel
     double c_real = find_c_real_part(k, width);
     double c_imaginary = find_c_imaginary_part(l, length);
 
     // Initialize the first number in the sequence
-    double real = 0;
-    double imaginary = 0;
-
-    for (int i = 0; i < max_iterations; i++) {
-        // Compute next number in the sequence
-        double new_real = calculate_next_real(c_real, real, imaginary);
-        double new_imaginary = calculate_next_imaginary(c_imaginary, real, imaginary);
-
-        // Update the current number in the sequence
-        real = new_real;
-        imaginary = new_imaginary;
-
-        // The sequence diverges to infinity if the modulus of the number is greater than 2
-        // Else cannot conclude that the sequence diverges
-        double modulus = calculate_modulus(real, imaginary);
-        if (modulus > 2.0) {
-            return False;
-        }
-    }
-
-    // We have not found that the sequence diverges, so the pixel belongs to Mandlebrot's set
-    return True;
-}
-
-void sub_mandelbrot(float k, float l, int length, int width, int max_iterations, float **graph) {
-    // Compute the real and imaginary parts of the number c associated with the pixel
-    double c_real = find_c_real_part(k, width);
-    double c_imaginary = find_c_imaginary_part(l, length);
-
-    // Initialize the first number in the sequence
-    double real = 0;
-    double imaginary = 0;
+    double real = 0.0;
+    double imaginary = 0.0;
 
     for (int _ = 0; _ < max_iterations; _++) {
         // Compute next number in the sequence
@@ -438,19 +414,26 @@ void sub_mandelbrot(float k, float l, int length, int width, int max_iterations,
         imaginary = new_imaginary;
 
         // The sequence diverges to infinity if the modulus of the number is greater than 2
-        // Else cannot conclude that the sequence diverges
-        double modulus = calculate_modulus(real, imaginary);
-        if (modulus > 2.0) {
+        // Else, we cannot conclude that the sequence diverges
+        bool diverges = calculate_modulus(real, imaginary) > 2.0;
+        if (diverges) {
             break;
         }
 
-        // Update the graph
+        // Store the x,y coordinates at each iteration
         int i = find_i_from_real(real, width);
         int j = find_j_from_imaginary(imaginary, length);
         if (i >= 0 && i < width && j >= 0 && j < length) {
-            graph[i][j] += 1.0;
+            points[*points_index].x = i;
+            points[*points_index].y = j;
+            *points_index += 1;
         }
     }
+
+    // The sequence diverges to infinity if the modulus of the number is greater than 2
+    // Else, we cannot conclude that the sequence diverges so the pixel belongs to Mandlebrot's set
+    bool diverges = calculate_modulus(real, imaginary) > 2.0;
+    return !diverges;
 }
 
 //----------------------------------------------------------
@@ -491,12 +474,26 @@ int main(int argc, char **argv) {
     // Display sub-fractal of mandelbrot set
     float delta = 0.10;
     int max_iterations = 200;
+    Pixel pixels[max_iterations];  // Array to hold up to MAX_POINTS points
     // We iterate over all of the pixels in the image
     for (int i = 0; i < (int)(length / delta); i++) {
         for (int j = 0; j < (int)(width / delta); j++) {
-            float x = i * delta;
-            float y = j * delta;
-            sub_mandelbrot(x, y, length, width, max_iterations, Graph2D);
+            float k = i * delta;
+            float l = j * delta;
+
+            // Store list of x,y coordinates at each iteration
+            int pixels_index = 0;  // This will track how many points are in the array
+            bool in_mandelbrot = is_in_mandelbrot(k, l, length, width, max_iterations, pixels, &pixels_index);
+
+            // Skip the pixel or not
+            if (in_mandelbrot) {
+                continue;
+            }
+
+            // Increment the pixel value for the visited pixels
+            for (int p = 0; p < pixels_index; p++) {
+                Graph2D[pixels[p].x][pixels[p].y] += 1.0;
+            }
         }
     }
 
