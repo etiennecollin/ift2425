@@ -20,7 +20,7 @@ file_no_ext="$(basename $file .c)"
 echo "Compiling ${file}"
 
 # Compile
-g++ -o "$file_no_ext" "$file" -I/usr/X11/include -L/usr/X11/lib -lm -lX11
+g++ -O3 -o "$file_no_ext" "$file" -I/usr/X11/include -L/usr/X11/lib -lm -lX11
 
 # Get output code of the compilation
 output=$?
