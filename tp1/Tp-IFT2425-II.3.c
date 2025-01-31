@@ -11,6 +11,7 @@
 // FICHIERS INCLUS
 //------------------------------------------------
 #include <math.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,11 +37,11 @@
 // #include <X11/Xatom.h>
 // #include <X11/cursorfont.h>
 
-Display* display;
+Display *display;
 int screen_num;
 int depth;
 Window root;
-Visual* visual;
+Visual *visual;
 GC gc;
 
 /************************************************************************/
@@ -63,14 +64,14 @@ int open_display() {
 /* FABRIQUE_WINDOW()                                                    */
 /* Cette fonction crée une fenetre X et l'affiche à l'écran.            */
 /************************************************************************/
-Window fabrique_window(char* nom_fen, int x, int y, int width, int height, int zoom) {
+Window fabrique_window(char *nom_fen, int x, int y, int width, int height, int zoom) {
     Window win;
     XSizeHints size_hints;
     XWMHints wm_hints;
     XClassHint class_hints;
     XTextProperty windowName, iconName;
 
-    char* name = nom_fen;
+    char *name = nom_fen;
 
     if (zoom < 0) {
         width /= -zoom;
@@ -112,19 +113,19 @@ Window fabrique_window(char* nom_fen, int x, int y, int width, int height, int z
 /* Crée une XImage à partir d'un tableau de float                           */
 /* L'image peut subir un zoom.                                              */
 /****************************************************************************/
-XImage* cree_Ximage(float** mat, int z, int length, int width) {
+XImage *cree_Ximage(float **mat, int z, int length, int width) {
     int lgth, wdth, lig, col, zoom_col, zoom_lig;
     float somme;
     unsigned char pix;
-    unsigned char* dat;
-    XImage* imageX;
+    unsigned char *dat;
+    XImage *imageX;
 
     // Zoom positiv else Zoom negatifv
     if (z > 0) {
         lgth = length * z;
         wdth = width * z;
 
-        dat = (unsigned char*)malloc(lgth * (wdth * 4) * sizeof(unsigned char));
+        dat = (unsigned char *)malloc(lgth * (wdth * 4) * sizeof(unsigned char));
         if (dat == NULL) {
             printf("Impossible d'allouer de la memoire.");
             exit(-1);
@@ -148,7 +149,7 @@ XImage* cree_Ximage(float** mat, int z, int length, int width) {
         lgth = (length / z);
         wdth = (width / z);
 
-        dat = (unsigned char*)malloc(lgth * (wdth * 4) * sizeof(unsigned char));
+        dat = (unsigned char *)malloc(lgth * (wdth * 4) * sizeof(unsigned char));
         if (dat == NULL) {
             printf("Impossible d'allouer de la memoire.");
             exit(-1);
@@ -172,7 +173,7 @@ XImage* cree_Ximage(float** mat, int z, int length, int width) {
         }
     }
 
-    imageX = XCreateImage(display, visual, depth, ZPixmap, 0, (char*)dat, wdth, lgth, 16, wdth * 4);
+    imageX = XCreateImage(display, visual, depth, ZPixmap, 0, (char *)dat, wdth, lgth, 16, wdth * 4);
     return (imageX);
 }
 
@@ -180,38 +181,37 @@ XImage* cree_Ximage(float** mat, int z, int length, int width) {
 //-- Matrice de Flottant --//
 //-------------------------//
 //----------------------------------------------------------
-// Alloue de la memoire pour une matrice 1d de float
+//  alloue de la memoire pour une matrice 1d de float
 //----------------------------------------------------------
-float* fmatrix_allocate_1d(int hsize) {
-    float* matrix;
+float *fmatrix_allocate_1d(int hsize) {
+    float *matrix;
     matrix = new float[hsize];
     return matrix;
 }
 
 //----------------------------------------------------------
-// Alloue de la memoire pour une matrice 2d de float
+//  alloue de la memoire pour une matrice 2d de float
 //----------------------------------------------------------
-float** fmatrix_allocate_2d(int vsize, int hsize) {
-    float** matrix;
-    float* imptr;
+float **fmatrix_allocate_2d(int vsize, int hsize) {
+    float **matrix;
+    float *imptr;
 
-    matrix = new float*[vsize];
+    matrix = new float *[vsize];
     imptr = new float[(hsize) * (vsize)];
     for (int i = 0; i < vsize; i++, imptr += hsize) {
         matrix[i] = imptr;
     }
     return matrix;
 }
-
 //----------------------------------------------------------
 // Libere la memoire de la matrice 1d de float
 //----------------------------------------------------------
-void free_fmatrix_1d(float* pmat) { delete[] pmat; }
+void free_fmatrix_1d(float *pmat) { delete[] pmat; }
 
 //----------------------------------------------------------
 // Libere la memoire de la matrice 2d de float
 //----------------------------------------------------------
-void free_fmatrix_2d(float** pmat) {
+void free_fmatrix_2d(float **pmat) {
     delete[] (pmat[0]);
     delete[] pmat;
 }
@@ -219,10 +219,10 @@ void free_fmatrix_2d(float** pmat) {
 //----------------------------------------------------------
 // Sauvegarde de l'image de nom <name> au format pgm
 //----------------------------------------------------------
-void SaveImagePgm(char* bruit, char* name, float** mat, int lgth, int wdth) {
+void SaveImagePgm(char *bruit, char *name, float **mat, int lgth, int wdth) {
     int i, j;
     char buff[300];
-    FILE* fic;
+    FILE *fic;
 
     // Extension
     strcpy(buff, bruit);
@@ -257,7 +257,7 @@ void SaveImagePgm(char* bruit, char* name, float** mat, int lgth, int wdth) {
 //----------------------------------------------------------
 // Recal
 //----------------------------------------------------------
-void Recal(float** mat, int lgth, int wdth) {
+void Recal(float **mat, int lgth, int wdth) {
     int i, j;
     float max, min, tmp;
 
@@ -295,9 +295,9 @@ void Recal(float** mat, int lgth, int wdth) {
 }
 
 //----------------------------------------------------------
-// Egalisation Histogramme
+//  Egalisation Histogramme
 //----------------------------------------------------------
-void Egalise(float** img, int lgth, int wdth, int thresh) {
+void Egalise(float **img, int lgth, int wdth, int thresh) {
     int i, j;
     float tmp;
     float nb;
@@ -350,10 +350,81 @@ void Egalise(float** img, int lgth, int wdth, int thresh) {
 
 //----------------------------------------------------------
 //----------------------------------------------------------
+// Auxilary functions --------------------------------------
+//----------------------------------------------------------
+//----------------------------------------------------------
+// Takes a pixel as an argument. Returns the real part of the number c
+// Associated with this pixel
+double find_c_real_part(int k, int width) { return 2.0 * (k - width / 1.35) / (width - 1.0); }
+
+// Takes a pixel as an argument. Returns the imaginary part of the number c
+// Associated with this pixel
+double find_c_imaginary_part(int l, int length) { return 2.0 * (l - length / 2.0) / (length - 1.0); }
+
+double calculate_modulus(double real_part, double imaginary_part) {
+    return sqrt(pow(real_part, 2) + pow(imaginary_part, 2));
+}
+
+// Function used at each iteration to test if the sequence diverges, using
+// The modulus test
+bool is_divergent(double real_part, double imaginary_part) {
+    double modulus = calculate_modulus(real_part, imaginary_part);
+    // The sequence diverges to infinity if the modulus of the number is greater than 2
+    // Else cannot conclude that the sequence diverges
+    return modulus > 2.0;
+}
+
+// Calculates the next real number in the sequence
+// Z[n+1] = z[n]^2 + c  =>  x[n+1] = x[n]^2 - y[n]^2 + Re(c)
+// X represent the real part of x_n
+// Y represents the imaginary part of x_n
+double calculate_next_real(double c_real, double real, double imaginary) {
+    return pow(real, 2) - pow(imaginary, 2) + c_real;
+}
+
+// Calculates the next imaginary number in the sequence
+// Z[n+1] = z[n]^2 + c  =>  y[n+1] = 2 * x[n] * y[n] + Im(c)
+// X represent the real part of x_n
+// Y represents the imaginary part of x_n
+double calculate_next_imaginary(double c_imaginary, double real, double imaginary) {
+    return 2.0 * real * imaginary + c_imaginary;
+}
+
+// Determines if a pixel belongs to Mandlebrot's set
+bool is_in_mandelbrot(int k, int l, int length, int width, int num_of_iterations) {
+    // Compute the real and imaginary parts of the number c associated with the pixel
+    double c_real = find_c_real_part(k, width);
+    double c_imaginary = find_c_imaginary_part(l, length);
+
+    // Initialize the first number in the sequence
+    double real = 0;
+    double imaginary = 0;
+
+    for (int i = 0; i < num_of_iterations; i++) {
+        // Compute next number in the sequence
+        double new_real = calculate_next_real(c_real, real, imaginary);
+        double new_imaginary = calculate_next_imaginary(c_imaginary, real, imaginary);
+
+        // Update the current number in the sequence
+        real = new_real;
+        imaginary = new_imaginary;
+
+        // If the sequence diverges, the pixel does not belong to Mandlebrot's set
+        if (is_divergent(real, imaginary)) {
+            return false;
+        }
+    }
+
+    // We have not found that the sequence diverges, so the pixel belongs to Mandlebrot's set
+    return true;
+}
+
+//----------------------------------------------------------
+//----------------------------------------------------------
 // PROGRAMME PRINCIPAL -------------------------------------
 //----------------------------------------------------------
 //----------------------------------------------------------
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     int i, j, k;
     bool flag_graph;
     int zoom;
@@ -362,12 +433,12 @@ int main(int argc, char** argv) {
     //------------
     XEvent ev;
     Window win_ppicture;
-    XImage* x_ppicture;
+    XImage *x_ppicture;
     char nomfen_ppicture[100];
     int length, width;
 
     length = width = 512;
-    float** Graph2D = fmatrix_allocate_2d(length, width);
+    float **Graph2D = fmatrix_allocate_2d(length, width);
     flag_graph = True;
     zoom = 1;
 
@@ -379,24 +450,24 @@ int main(int argc, char** argv) {
     }
 
     //--------------------------------------------------------------------------------
-    // PROGRAMME ---------------------------------------------------------------------
+    // PROGRAMME
+    // ---------------------------------------------------------------------
     //--------------------------------------------------------------------------------
 
     // Affichage dégradé de niveaux de gris dans Graph2D
     for (int i = 0; i < length; i++) {
         for (int j = 0; j < width; j++) {
-            Graph2D[i][j] = j / 2.0;
+            if (is_in_mandelbrot(j, i, length, width, 200)) {
+                Graph2D[i][j] = 0.0;
+            } else {
+                Graph2D[i][j] = 255.0;
+            }
         }
     }
 
-    //---------------------------
-    // Algorithme NEWTON
-    //---------------------------
-
-    // TODO
-
     //--------------------------------------------------------------------------------
-    //---------------- visu sous XWINDOW ---------------------------------------------
+    //---------------- visu sous XWINDOW
+    //---------------------------------------------
     //--------------------------------------------------------------------------------
 
     // Recalage-Egalise le graph
@@ -411,7 +482,7 @@ int main(int argc, char** argv) {
         x_ppicture = cree_Ximage(Graph2D, zoom, length, width);
 
         // Sauvegarde
-        SaveImagePgm((char*)"", (char*)"FractalMandelbrot", Graph2D, length, width);
+        SaveImagePgm((char *)"", (char *)"FractalMandelbrot_QII.3", Graph2D, length, width);
         printf("\n\n Pour quitter,appuyer sur la barre d'espace");
         fflush(stdout);
 
