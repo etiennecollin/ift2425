@@ -395,7 +395,7 @@ typedef struct {
 } Pixel;
 
 // Determines if a pixel belongs to Mandlebrot's set
-bool is_in_mandelbrot(int k, int l, int length, int width, int max_iterations, Pixel *points, int *points_index) {
+bool is_in_mandelbrot(float k, float l, int length, int width, int max_iterations, Pixel *points, int *points_index) {
     // Compute the real and imaginary parts of the number c associated with the pixel
     double c_real = find_c_real_part(k, width);
     double c_imaginary = find_c_imaginary_part(l, length);
@@ -442,7 +442,7 @@ bool is_in_mandelbrot(int k, int l, int length, int width, int max_iterations, P
 //----------------------------------------------------------
 //----------------------------------------------------------
 int main(int argc, char **argv) {
-    int i, j, k;
+    int i, j;
     bool flag_graph;
     int zoom;
 
@@ -474,6 +474,7 @@ int main(int argc, char **argv) {
     // Display sub-fractal of mandelbrot set
     float delta = 0.10;
     int max_iterations = 200;
+    bool select_in_mandelbrot = true;
     Pixel pixels[max_iterations];  // Array to hold up to MAX_POINTS points
     // We iterate over all of the pixels in the image
     for (int i = 0; i < (int)(length / delta); i++) {
@@ -486,7 +487,7 @@ int main(int argc, char **argv) {
             bool in_mandelbrot = is_in_mandelbrot(k, l, length, width, max_iterations, pixels, &pixels_index);
 
             // Skip the pixel or not
-            if (in_mandelbrot) {
+            if (in_mandelbrot != select_in_mandelbrot) {
                 continue;
             }
 
