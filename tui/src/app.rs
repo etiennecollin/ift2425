@@ -1,5 +1,6 @@
 use crate::modules::{
-    math_eval::MathEvalModule, menu::MenuModule, placeholder::PlaceholderModule, Modules, MODULES,
+    math_eval::MathEvalModule, menu::MenuModule, newton::NewtonModule,
+    placeholder::PlaceholderModule, Modules, MODULES,
 };
 
 use std::time::Duration;
@@ -36,6 +37,7 @@ pub struct App {
     current_module: Modules,
     menu_module: MenuModule,
     math_eval_module: MathEvalModule,
+    newton_module: NewtonModule,
     placeholder_module: PlaceholderModule,
 }
 
@@ -95,6 +97,7 @@ impl App {
         frame.render_widget(&self.menu_module, body_area_left);
         match self.current_module {
             Modules::ExprEval => frame.render_widget(&self.math_eval_module, body_area_right),
+            Modules::Newton => frame.render_widget(&self.newton_module, body_area_right),
             Modules::Placeholder => frame.render_widget(&self.placeholder_module, body_area_right),
         }
         frame.render_widget(info_mappings, info_mappings_area);
@@ -148,6 +151,7 @@ impl App {
         self.current_mode = Mode::Insert;
         match self.current_module {
             Modules::ExprEval => self.math_eval_module.insert_mode_enter(),
+            Modules::Newton => self.newton_module.insert_mode_enter(),
             Modules::Placeholder => {}
         }
     }
@@ -156,6 +160,7 @@ impl App {
         self.current_mode = Mode::Normal;
         match self.current_module {
             Modules::ExprEval => self.math_eval_module.insert_mode_exit(),
+            Modules::Newton => self.newton_module.insert_mode_exit(),
             Modules::Placeholder => {}
         }
     }
@@ -163,6 +168,7 @@ impl App {
     fn input(&mut self, c: KeyEvent) {
         match self.current_module {
             Modules::ExprEval => self.math_eval_module.input(c),
+            Modules::Newton => self.newton_module.input(c),
             Modules::Placeholder => {}
         }
     }
@@ -170,6 +176,7 @@ impl App {
     fn prev_field(&mut self) {
         match self.current_module {
             Modules::ExprEval => self.math_eval_module.prev_field(),
+            Modules::Newton => self.newton_module.prev_field(),
             Modules::Placeholder => {}
         }
     }
@@ -177,6 +184,7 @@ impl App {
     fn next_field(&mut self) {
         match self.current_module {
             Modules::ExprEval => self.math_eval_module.next_field(),
+            Modules::Newton => self.newton_module.next_field(),
             Modules::Placeholder => {}
         }
     }
@@ -184,6 +192,7 @@ impl App {
     fn module_run(&mut self) {
         match self.current_module {
             Modules::ExprEval => self.math_eval_module.run(),
+            Modules::Newton => self.newton_module.run(),
             Modules::Placeholder => {}
         }
     }

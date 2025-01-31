@@ -1,0 +1,9 @@
+[package]
+name = "utils"
+version = "0.1.0"
+edition = "2021"
+description = "A collection of algorithms used during the IFT2425 course at Université de Montréal."
+authors = ["etiennecollin <collin.etienne.contact@gmail.com>"]
+license = "MIT"
+
+[dependencies]
