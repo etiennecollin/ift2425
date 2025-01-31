@@ -354,44 +354,42 @@ void Egalise(float **img, int lgth, int wdth, int thresh) {
 //----------------------------------------------------------
 //----------------------------------------------------------
 // Takes a pixel as an argument. Returns the real part of the number c
-// Associated with this pixel
-double find_c_real_part(int k, int width) { return 2.0 * (k - width / 1.35) / (width - 1.0); }
+// associated with this pixel
+double find_c_real_part(float k, int width) { return 2.0 * (k - width / 1.35) / (width - 1.0); }
 
 // Takes a pixel as an argument. Returns the imaginary part of the number c
-// Associated with this pixel
-double find_c_imaginary_part(int l, int length) { return 2.0 * (l - length / 2.0) / (length - 1.0); }
+// associated with this pixel
+double find_c_imaginary_part(float l, int length) { return 2.0 * (l - length / 2.0) / (length - 1.0); }
 
+// Takes an real number as an argument. Returns the pixel associated with this real number
+int find_i_from_real(double real, int width) { return real * (width - 1.0) / 2.0 + width / 1.35; }
+
+// Takes an imaginary number as an argument. Returns the pixel associated with this imaginary number
+int find_j_from_imaginary(double imaginary, int length) { return imaginary * (length - 1.0) / 2.0 + length / 2.0; }
+
+// Takes the real and imaginary parts of a number as arguments. Returns the modulus of the number
 double calculate_modulus(double real_part, double imaginary_part) {
     return sqrt(pow(real_part, 2) + pow(imaginary_part, 2));
 }
 
-// Function used at each iteration to test if the sequence diverges, using
-// The modulus test
-bool is_divergent(double real_part, double imaginary_part) {
-    double modulus = calculate_modulus(real_part, imaginary_part);
-    // The sequence diverges to infinity if the modulus of the number is greater than 2
-    // Else cannot conclude that the sequence diverges
-    return modulus > 2.0;
-}
-
 // Calculates the next real number in the sequence
-// Z[n+1] = z[n]^2 + c  =>  x[n+1] = x[n]^2 - y[n]^2 + Re(c)
-// X represent the real part of x_n
-// Y represents the imaginary part of x_n
+// z[n+1] = z[n]^2 + c  =>  x[n+1] = x[n]^2 - y[n]^2 + Re(c)
+// x represent the real part of x_n
+// y represents the imaginary part of x_n
 double calculate_next_real(double c_real, double real, double imaginary) {
     return pow(real, 2) - pow(imaginary, 2) + c_real;
 }
 
 // Calculates the next imaginary number in the sequence
-// Z[n+1] = z[n]^2 + c  =>  y[n+1] = 2 * x[n] * y[n] + Im(c)
-// X represent the real part of x_n
-// Y represents the imaginary part of x_n
+// z[n+1] = z[n]^2 + c  =>  y[n+1] = 2 * x[n] * y[n] + Im(c)
+// x represent the real part of x_n
+// y represents the imaginary part of x_n
 double calculate_next_imaginary(double c_imaginary, double real, double imaginary) {
     return 2.0 * real * imaginary + c_imaginary;
 }
 
 // Determines if a pixel belongs to Mandlebrot's set
-bool is_in_mandelbrot(int k, int l, int length, int width, int num_of_iterations) {
+bool is_in_mandelbrot(int k, int l, int length, int width, int max_iterations) {
     // Compute the real and imaginary parts of the number c associated with the pixel
     double c_real = find_c_real_part(k, width);
     double c_imaginary = find_c_imaginary_part(l, length);
@@ -400,7 +398,7 @@ bool is_in_mandelbrot(int k, int l, int length, int width, int num_of_iterations
     double real = 0;
     double imaginary = 0;
 
-    for (int i = 0; i < num_of_iterations; i++) {
+    for (int i = 0; i < max_iterations; i++) {
         // Compute next number in the sequence
         double new_real = calculate_next_real(c_real, real, imaginary);
         double new_imaginary = calculate_next_imaginary(c_imaginary, real, imaginary);
@@ -409,14 +407,50 @@ bool is_in_mandelbrot(int k, int l, int length, int width, int num_of_iterations
         real = new_real;
         imaginary = new_imaginary;
 
-        // If the sequence diverges, the pixel does not belong to Mandlebrot's set
-        if (is_divergent(real, imaginary)) {
-            return false;
+        // The sequence diverges to infinity if the modulus of the number is greater than 2
+        // Else cannot conclude that the sequence diverges
+        double modulus = calculate_modulus(real, imaginary);
+        if (modulus > 2.0) {
+            return False;
         }
     }
 
     // We have not found that the sequence diverges, so the pixel belongs to Mandlebrot's set
-    return true;
+    return True;
+}
+
+void sub_mandelbrot(float k, float l, int length, int width, int max_iterations, float **graph) {
+    // Compute the real and imaginary parts of the number c associated with the pixel
+    double c_real = find_c_real_part(k, width);
+    double c_imaginary = find_c_imaginary_part(l, length);
+
+    // Initialize the first number in the sequence
+    double real = 0;
+    double imaginary = 0;
+
+    for (int _ = 0; _ < max_iterations; _++) {
+        // Compute next number in the sequence
+        double new_real = calculate_next_real(c_real, real, imaginary);
+        double new_imaginary = calculate_next_imaginary(c_imaginary, real, imaginary);
+
+        // Update the current number in the sequence
+        real = new_real;
+        imaginary = new_imaginary;
+
+        // The sequence diverges to infinity if the modulus of the number is greater than 2
+        // Else cannot conclude that the sequence diverges
+        double modulus = calculate_modulus(real, imaginary);
+        if (modulus > 2.0) {
+            break;
+        }
+
+        // Update the graph
+        int i = find_i_from_real(real, width);
+        int j = find_j_from_imaginary(imaginary, length);
+        if (i >= 0 && i < width && j >= 0 && j < length) {
+            graph[i][j] += 1.0;
+        }
+    }
 }
 
 //----------------------------------------------------------
@@ -454,14 +488,15 @@ int main(int argc, char **argv) {
     // ---------------------------------------------------------------------
     //--------------------------------------------------------------------------------
 
-    // Affichage dégradé de niveaux de gris dans Graph2D
-    for (int i = 0; i < length; i++) {
-        for (int j = 0; j < width; j++) {
-            if (is_in_mandelbrot(j, i, length, width, 200)) {
-                Graph2D[i][j] = 0.0;
-            } else {
-                Graph2D[i][j] = 255.0;
-            }
+    // Display sub-fractal of mandelbrot set
+    float delta = 0.10;
+    int max_iterations = 200;
+    // We iterate over all of the pixels in the image
+    for (int i = 0; i < (int)(length / delta); i++) {
+        for (int j = 0; j < (int)(width / delta); j++) {
+            float x = i * delta;
+            float y = j * delta;
+            sub_mandelbrot(x, y, length, width, max_iterations, Graph2D);
         }
     }
 
@@ -494,13 +529,13 @@ int main(int argc, char **argv) {
                     XPutImage(display, win_ppicture, gc, x_ppicture, 0, 0, 0, 0, x_ppicture->width, x_ppicture->height);
                     break;
 
-                case KeyPress:
-                    XDestroyImage(x_ppicture);
-
-                    XFreeGC(display, gc);
-                    XCloseDisplay(display);
-                    flag_graph = 0;
-                    break;
+                    // case KeyPress:
+                    //     XDestroyImage(x_ppicture);
+                    //
+                    //     XFreeGC(display, gc);
+                    //     XCloseDisplay(display);
+                    //     flag_graph = 0;
+                    //     break;
             }
             if (!flag_graph) break;
         }
