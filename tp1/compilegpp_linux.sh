@@ -18,7 +18,7 @@ file_no_ext="$(basename $file .c)"
 echo "Compiling ${file}"
 
 # Get output code of the following command
-g++ -o "$file_no_ext" "$file" -lm -lX11
+g++ -O3 -o "$file_no_ext" "$file" -lm -lX11
 
 output=$?
 if [ $output -eq 0 ]; then
