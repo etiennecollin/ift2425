@@ -31,69 +31,62 @@
 // AUXILARY FUNCTIONS --------------------------------------
 //----------------------------------------------------------
 //----------------------------------------------------------
-double f(double c_mv, double *array, size_t array_size) {
-  // sum1 : y_i^(c_mv) ln(y_i)
-  double sum1 = 0;
-  for (int i = 0; i < array_size; i++) {
-    sum1 += pow(array[i], c_mv) * log(array[i]);
-  }
+double f(double x) {
+    const double array[] = {0.11, 0.24, 0.27, 0.52, 1.13, 1.54, 1.71, 1.84, 1.92, 2.01};
+    const size_t array_size = sizeof(array) / sizeof(array[0]);
 
-  // sum2 : y_i^(c_mv)
-  double sum2 = 0;
-  for (int i = 0; i < array_size; i++) {
-    sum2 += pow(array[i], c_mv);
-  }
+    double sum1 = 0;  // sum1 : y_i^x ln(y_i)
+    double sum2 = 0;  // sum2 : y_i^x
+    double sum3 = 0;  // sum3 : ln(y_i)
 
-  // sum3 : ln(y_i)
-  double sum3 = 0;
-  for (int i = 0; i < array_size; i++) {
-    sum3 += log(array[i]);
-  }
+    for (int i = 0; i < array_size; i++) {
+        sum1 += pow(array[i], x) * log(array[i]);
+        sum2 += pow(array[i], x);
+        sum3 += log(array[i]);
+    }
 
-  return (sum1 / sum2) - (1 / c_mv) - (sum3 / array_size);
+    return (sum1 / sum2) - (1 / x) - (sum3 / array_size);
 }
 
-double derivativef(double x, double *array, size_t array_size) {
-  double h = pow(10, -5);
-  double num =
-      -f(x + 2 * h, array, array_size) + 8 * f(x + h, array, array_size) -
-      8 * f(x - h, array, array_size) + f(x - 2 * h, array, array_size);
-  double denom = 12 * h;
+double derivative_f(double x) {
+    double h = pow(10, -5);
+    double num = -f(x + 2 * h) + 8 * f(x + h) - 8 * f(x - h) + f(x - 2 * h);
+    double denom = 12 * h;
 
-  return num / denom;
+    return num / denom;
 }
-
 //----------------------------------------------------------
 //----------------------------------------------------------
 // PROGRAMME PRINCIPAL -------------------------------------
 //----------------------------------------------------------
 //----------------------------------------------------------
 int main(int argc, char **argv) {
-  //---------------------------
-  // Algorithme NEWTON
-  //---------------------------
+    //---------------------------
+    // Algorithme NEWTON
+    //---------------------------
+    double x1 = 0.25;
+    double x2 = x1;
+    double delta = 1e-6;
+    double epsilon = 1e-6;
 
-  double y[] = {0.11, 0.24, 0.27, 0.52, 1.13, 1.54, 1.71, 1.84, 1.92, 2.01};
-  int n = 10;
+    int counter = 1;
 
-  double x1 = 0.25;
-  double x2 = 0;
+    do {
+        x1 = x2;
+        x2 = x1 - f(x1) / derivative_f(x1);
 
-  // TODO(grosjuice): Maybe change the tolerance (was not specified in the
-  // homework)
-  double delta = pow(10, -5);
-  double epsilon = pow(10, -6);
+        printf("Iteration: %d, x1 = %.6f, x2 = %.6f, f(x2) = %.6e, |x1 - x2| = %.6e\n", counter, x1, x2, f(x2),
+               fabs(x2 - x1));
 
-  while (fabs(x2 - x1) >= delta && fabs(f(x1, y, n)) >= epsilon &&
-         derivativef(x1, y, n) != 0) {
-    x2 = x1;
-    x1 = x1 - f(x1, y, n) / derivativef(x1, y, n);
-  }
+        counter++;
+    } while (fabs(x2 - x1) >= delta && fabs(f(x2)) >= epsilon && derivative_f(x2) != 0);
 
-  // Print the root
-  printf("Root : %f\n", x1);
+    // Print the root
+    printf("r=%f\n", x2);
 
-  // Retour sans probleme
-  printf("\n Fini... \n\n\n");
-  return 0;
+    printf("f(r)=%e\n", f(x2));
+
+    // Retour sans probleme
+    printf("Fini...\n");
+    return 0;
 }
