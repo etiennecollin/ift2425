@@ -1,4 +1,10 @@
-use std::fmt::Write;
+use tabled::{
+    builder::Builder,
+    settings::{style::HorizontalLine, Panel, Style, Theme},
+};
+
+/// A f64 representing the perturbation used to compute the gradient.
+const EPSILON: f64 = 1e-6;
 
 /// This type defines a function that takes a slice of f64 and returns an f64.
 /// Each element of the slice represents a variable in the function.
@@ -8,7 +14,7 @@ pub type FuncMulti = fn(&[f64]) -> f64;
 pub type FuncSingle = fn(f64) -> f64;
 
 // Function to compute the gradient of an arbitrary function at a given point.
-pub fn compute_gradient(func: FuncMulti, point: &[f64], epsilon: f64) -> Vec<f64> {
+pub fn compute_gradient(func: FuncMulti, point: &[f64]) -> Vec<f64> {
     let mut gradient = Vec::with_capacity(point.len());
 
     for (i, &x) in point.iter().enumerate() {
@@ -17,17 +23,40 @@ pub fn compute_gradient(func: FuncMulti, point: &[f64], epsilon: f64) -> Vec<f64
         let mut point_minus = point.to_vec();
 
         // Perturb the i-th dimension
-        point_plus[i] = x + epsilon;
-        point_minus[i] = x - epsilon;
+        point_plus[i] = x + EPSILON;
+        point_minus[i] = x - EPSILON;
 
         // Compute the finite difference approximation of the derivative
-        let derivative = (func(&point_plus) - func(&point_minus)) / (2.0 * epsilon);
+        let derivative = (func(&point_plus) - func(&point_minus)) / (2.0 * EPSILON);
 
         // Store the derivative for this variable in the gradient vector
         gradient.push(derivative);
     }
 
     gradient
+}
+
+// Function to compute the gradient of an arbitrary function at a given point.
+pub fn compute_derivative(func: FuncSingle, x: f64) -> f64 {
+    (func(x + EPSILON) - func(x - EPSILON)) / (2.0 * EPSILON)
+}
+
+/// Defines the possible errors that can occur when formatting a table.
+#[derive(Debug)]
+pub enum TableError {
+    EmptyTable,
+    HeaderRowsLengthMismatch,
+}
+
+impl From<TableError> for &'static str {
+    fn from(val: TableError) -> Self {
+        match val {
+            TableError::EmptyTable => "The table is empty.",
+            TableError::HeaderRowsLengthMismatch => {
+                "The header and rows have different number of columns."
+            }
+        }
+    }
 }
 
 /// This function formats a table with a header and contents.
@@ -43,121 +72,48 @@ pub fn compute_gradient(func: FuncMulti, point: &[f64], epsilon: f64) -> Vec<f64
 /// # Returns
 ///
 /// - A string representing the formatted table.
-///
-/// # Panics
-///
-/// - If the number of columns in the header is different from the number of columns in the rows.
-///
-/// # Quirks
-///
-/// - This works well enough for me.
-/// - The table width only depends on the `header` and `rows`, not the `info`.
-/// - The behaviour is weird and might [panic] if the `info`, `header` or `rows` is empty.
-pub fn table_formatter(info: Vec<String>, header: String, rows: Vec<String>) -> String {
-    // These variables will store the maximum width of each column
-    let column_number = header.split(",").count();
+pub fn table_formatter<T>(
+    info: Vec<String>,
+    header: Vec<String>,
+    rows: Vec<Vec<T>>,
+) -> Result<String, TableError>
+where
+    T: Into<String>,
+{
+    // Check if the header and rows have the same number of columns
+    if (header.is_empty() && !rows.is_empty())
+        || (!header.is_empty() && rows.is_empty())
+        || rows.iter().any(|row| row.len() != header.len())
+    {
+        return Err(TableError::HeaderRowsLengthMismatch);
+    }
 
-    // Check that the number of columns in the header is the same as the number of columns in the rows
-    rows.iter().for_each(|row| {
-        assert_eq!(row.split(",").count(), column_number);
+    // Check if the table is empty
+    if info.is_empty() && (header.is_empty() && rows.is_empty()) {
+        return Err(TableError::EmptyTable);
+    }
+
+    // Create the table and prepare rows
+    let mut builder = Builder::default();
+    builder.push_record(header);
+    rows.into_iter().for_each(|row| {
+        builder.push_record(row);
     });
+    let mut table = builder.build();
 
-    // Compute the width of each column
-    let mut widths: Vec<usize> = vec![0; column_number];
-    rows.iter().for_each(|row| {
-        row.split(",")
-            .map(|col| col.trim().len())
-            .enumerate()
-            .for_each(|(i, width)| widths[i] = widths[i].max(width))
-    });
-    header
-        .split(",")
-        .map(|col| col.trim().len())
-        .enumerate()
-        .for_each(|(i, width)| widths[i] = widths[i].max(width));
+    // Prepare the style of the table
+    let mut theme = Theme::from_style(Style::modern_rounded());
+    let hline = HorizontalLine::inherit(Style::modern_rounded());
+    theme.remove_horizontal_lines();
 
-    // Compute the width of the widest formatted row
-    // The width of the row is:
-    // - Content: The width of each column's content
-    // - Separators: columns + 1
-    // - Spaces: columns * 2
-    let row_max_width = widths.iter().sum::<usize>() + 3 * column_number + 1;
+    // Add a horizontal line after the header and the info
+    theme.insert_horizontal_line(1, hline);
+    if !info.is_empty() {
+        theme.insert_horizontal_line(2, hline);
+    }
 
-    // Correctly format the header
-    let header_string = header.split(",").map(|col| col.trim()).enumerate().fold(
-        String::with_capacity(row_max_width),
-        |mut output, (i, col)| {
-            let width = widths[i];
-            if i == 0 {
-                let _ = write!(output, "│ {:<width$} │", col);
-            } else {
-                let _ = write!(output, " {:<width$} │", col);
-            }
-            output
-        },
-    );
-
-    // Correctly format each row
-    let rows_string = rows.iter().enumerate().fold(
-        String::with_capacity(row_max_width * rows.len()),
-        |mut output, (i, row)| {
-            // Split the row into columns
-            // Trim each column
-            // Write the formatted column to the output
-            row.split(",")
-                .map(|col| col.trim())
-                .enumerate()
-                .for_each(|(j, col)| {
-                    // Get the max width of the column
-                    let width = widths[j];
-
-                    // Format the column
-                    if j == 0 {
-                        // If it is the first column, add a separator
-                        let _ = write!(output, "│ {:<width$} │", col);
-                    } else if j == column_number - 1 && i != rows.len() - 1 {
-                        // If it is the last column, add a newline except for the last row
-                        let _ = writeln!(output, " {:<width$} │", col);
-                    } else {
-                        // If it is a middle column or the last column of the last row, add a separator
-                        let _ = write!(output, " {:<width$} │", col);
-                    }
-                });
-
-            output
-        },
-    );
-
-    // Get the maximum width of the table
-    let table_width: usize = header_string.len() - 2 * column_number - 4;
-
-    // Get the width of the header (there are 2 delimiters)
-    let info_width = table_width - 2;
-
-    // Format the info
-    let info_string = info
-        .iter()
-        .enumerate()
-        .fold(String::new(), |mut output, (i, inf)| {
-            if i == info.len() - 1 {
-                let _ = write!(output, "│ {:<info_width$} │", inf,);
-            } else {
-                let _ = writeln!(output, "│ {:<info_width$} │", inf,);
-            }
-            output
-        });
-
-    // Create the table
-    let table: Vec<String> = vec![
-        format!("╭{}╮", "─".repeat(table_width)),
-        info_string,
-        format!("├{}┤", "─".repeat(table_width)),
-        header_string,
-        format!("├{}┤", "─".repeat(table_width)),
-        rows_string,
-        format!("╰{}╯", "─".repeat(table_width)),
-    ];
-
-    // Concatenate the table into a single string
-    table.join("\n")
+    // Build the table
+    let info_str = info.join("\n");
+    table.with(theme).with(Panel::header(info_str));
+    Ok(table.to_string())
 }

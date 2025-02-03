@@ -7,3 +7,4 @@ authors = ["etiennecollin <collin.etienne.contact@gmail.com>"]
 license = "MIT"
 
 [dependencies]
+tabled = "0.17.0"

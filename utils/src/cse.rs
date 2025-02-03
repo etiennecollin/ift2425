@@ -1,12 +1,18 @@
 use crate::utils::{compute_gradient, FuncMulti};
 
 /// This function the correctly rounded value of the function at the given point with proper error.
-pub fn cse(f: FuncMulti, point: &[f64], error: &[f64], epsilon: f64) -> f64 {
+///
+/// # Arguments
+///
+/// - `f`: A function that takes a slice of f64 and returns a f64. Each element of the slice represents a variable in the function.
+/// - `point`: A slice of f64 representing the point where the function is evaluated.
+/// - `error`: A slice of f64 representing the error on each variable of the function.
+pub fn cse(f: FuncMulti, point: &[f64], error: &[f64]) -> f64 {
     // Compute the function on the point
     let res = f(point);
 
     // Compute the gradient of the function at the point
-    let gradient = compute_gradient(f, point, epsilon);
+    let gradient = compute_gradient(f, point);
 
     // Get the error on f
     let df: f64 = gradient
@@ -29,7 +35,7 @@ pub fn cse(f: FuncMulti, point: &[f64], error: &[f64], epsilon: f64) -> f64 {
     println!("│ Δf = {}", df);
     println!("│ Δf/f = {:.3}%", df / res * 100.0);
     println!("├─");
-    println!("│ r = {}", -r);
+    println!("│ Δf < 0.5 * 10^r -> r = {}", -r);
     println!("│ f(point) = {}", res_rounded);
     println!("╰───────────────");
 
