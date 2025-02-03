@@ -31,7 +31,8 @@ fn main() {
     let _ = bissection(func, interval, x_tolerance, f_x_tolerance, ITERATIONS_MAX).unwrap();
 
     // Linear interpolation method
-    let _ = linear_interpolation(func, interval, x_tolerance, f_x_tolerance, ITERATIONS_MAX).unwrap();
+    let _ =
+        linear_interpolation(func, interval, x_tolerance, f_x_tolerance, ITERATIONS_MAX).unwrap();
 
     // Secant method
     let _ = secant(func, interval, x_tolerance, f_x_tolerance, ITERATIONS_MAX).unwrap();
