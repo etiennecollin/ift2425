@@ -154,7 +154,7 @@ pub fn linear_interpolation(
         );
 
         // Check if the error is below the tolerance
-        if f_x.abs() < f_x_tolerance || (b - a).abs() < x_tolerance {
+        if f_x.abs() < f_x_tolerance || (x - a).abs() < x_tolerance {
             break;
         }
 
