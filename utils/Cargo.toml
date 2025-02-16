@@ -7,4 +7,5 @@ authors = ["etiennecollin <collin.etienne.contact@gmail.com>"]
 license = "MIT"
 
 [dependencies]
+nalgebra = "0.33.2"
 tabled = "0.17.0"
