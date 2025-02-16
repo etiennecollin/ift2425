@@ -74,92 +74,6 @@ pub fn solve_triangular(
     result
 }
 
-/// Computes the LU decomposition of a matrix without pivoting.
-///
-/// # Arguments
-///
-/// - `a`: A square matrix of size `n x n`.
-///
-/// # Returns
-///
-/// - A tuple containing the lower triangular matrix `L` and the upper triangular matrix `U`.
-// pub fn no_piv_lu(matrix: &DMatrix<f64>) -> Result<(DMatrix<f64>, DMatrix<f64>), &'static str> {
-//     let n = matrix.nrows();
-//     let mut l = DMatrix::<f64>::zeros(n, n);
-//     let mut u = matrix.clone();
-//
-//     for i in 0..n {
-//         // L diagonal elements are all 1
-//         l[(i, i)] = 1.0;
-//
-//         // Upper Triangular: Make elements below the diagonal zero
-//         for j in i..n {
-//             u[(i, j)] -= (0..i).map(|k| l[(i, k)] * u[(k, j)]).sum::<f64>();
-//         }
-//
-//         // Lower Triangular: Make elements above the diagonal zero
-//         for j in i + 1..n {
-//             // Check if the diagonal element is zero
-//             // If it is, the matrix is singular
-//             if u[(i, i)] == 0.0 {
-//                 return Err("Matrix is singular");
-//             }
-//
-//             l[(j, i)] =
-//                 (u[(j, i)] - (0..i).map(|k| l[(j, k)] * u[(k, i)]).sum::<f64>()) / u[(i, i)];
-//
-//             // Zero out the elements in the upper triangle
-//             u[(j, i)] = 0.0;
-//         }
-//     }
-//
-//     Ok((l, u))
-// }
-
-/// Computes the LU decomposition of a matrix without pivoting.
-///
-/// # Arguments
-///
-/// - `a`: A square matrix of size `n x n`.
-///
-/// # Returns
-///
-/// - A tuple containing the lower triangular matrix `L` and the upper triangular matrix `U`.
-pub fn no_piv_lu(matrix: &DMatrix<f64>) -> (DMatrix<f64>, DMatrix<f64>) {
-    let n = matrix.nrows();
-    assert_eq!(n, matrix.ncols(), "The matrix must be square");
-
-    let mut l = DMatrix::zeros(n, n);
-    let mut u = DMatrix::identity(n, n);
-
-    // Initialize the first column of L
-    for i in 0..n {
-        l[(i, 0)] = matrix[(i, 0)];
-    }
-
-    // Initialize the first row of U
-    for j in 1..n {
-        u[(0, j)] = matrix[(0, j)] / l[(0, 0)];
-    }
-
-    // Compute elements of L and U
-    for j in 1..n {
-        // Compute elements of L
-        for i in j..n {
-            let sum = (0..j).fold(0.0, |sum, k| sum + l[(i, k)] * u[(k, j)]);
-            l[(i, j)] = matrix[(i, j)] - sum;
-        }
-
-        // Compute elements of U
-        for i in (j + 1)..n {
-            let sum = (0..j).fold(0.0, |sum, k| sum + l[(j, k)] * u[(k, i)]);
-            u[(j, i)] = (matrix[(j, i)] - sum) / l[(j, j)];
-        }
-    }
-
-    (l, u)
-}
-
 /// Computes the LU decomposition of a matrix without pivoting. The input matrix is modified in-place.
 ///
 /// # Arguments
@@ -196,33 +110,23 @@ pub fn no_piv_lu_mut(matrix: &mut DMatrix<f64>) {
 ///
 /// - `a`: A square matrix of size `n x n`.
 pub fn no_piv_lu_packed(matrix: &DMatrix<f64>) -> DMatrix<f64> {
-    let n = matrix.nrows();
-    assert_eq!(n, matrix.ncols(), "The matrix must be square");
-
-    let mut lu = DMatrix::zeros(n, n);
-    lu.copy_from(matrix);
-
-    // Initialize the first row of U
-    for j in 1..n {
-        lu[(0, j)] /= lu[(0, 0)];
-    }
-
-    // Compute elements of L and U
-    for j in 1..n {
-        // Compute elements of L
-        for i in j..n {
-            let sum = (0..j).fold(0.0, |sum, k| sum + lu[(i, k)] * lu[(k, j)]);
-            lu[(i, j)] -= sum;
-        }
-
-        // Compute elements of U
-        for i in (j + 1)..n {
-            let sum = (0..j).fold(0.0, |sum, k| sum + lu[(j, k)] * lu[(k, i)]);
-            lu[(j, i)] = (lu[(j, i)] - sum) / lu[(j, j)];
-        }
-    }
-
+    let mut lu = matrix.clone();
+    no_piv_lu_mut(&mut lu);
     lu
+}
+
+/// Computes the LU decomposition of a matrix without pivoting.
+///
+/// # Arguments
+///
+/// - `a`: A square matrix of size `n x n`.
+///
+/// # Returns
+///
+/// - A tuple containing the lower triangular matrix `L` and the upper triangular matrix `U`.
+pub fn no_piv_lu(matrix: &DMatrix<f64>) -> (DMatrix<f64>, DMatrix<f64>) {
+    let lu = no_piv_lu_packed(matrix);
+    lu_unpack(&lu)
 }
 
 /// Computes the LU decomposition of a matrix with partial pivoting.
@@ -448,4 +352,21 @@ pub fn solve_gauss(
     println!("╰───────────────────────────────");
 
     x
+}
+
+pub fn least_squares(a: &DMatrix<f64>, b: &DVector<f64>) -> Result<DVector<f64>, &'static str> {
+    let a_t = a.transpose();
+    let a_t_a = &a_t * a;
+    let a_t_b = &a_t * b;
+
+    println!("╭───────────────────────────────");
+    println!("│ Least Squares");
+    println!("├───────────────────────────────");
+    println!("A^T * A: {}", a_t_a);
+    println!("A^T * b: {}", a_t_b);
+    println!("╰───────────────────────────────");
+
+    let x = partial_piv_lu(&a_t_a, &a_t_b)?;
+
+    Ok(x)
 }
