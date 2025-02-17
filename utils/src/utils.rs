@@ -4,7 +4,7 @@ use tabled::{
 };
 
 /// A f64 representing the perturbation used to compute the gradient.
-const EPSILON: f64 = 1e-6;
+pub const EPSILON: f64 = 1e-6;
 
 /// This type defines a function that takes a slice of f64 and returns an f64.
 /// Each element of the slice represents a variable in the function.
