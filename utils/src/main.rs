@@ -16,15 +16,19 @@ fn main() {
 }
 
 fn error_analysis() {
-    let func: FuncMulti = |point| {
-        let g = |x: f64| x.powi(2) - 2.0 * x.sqrt();
-        g((point[0] + point[2]) / point[1])
+    let func: FuncMulti = |p| {
+        // let g = |x: f64| x.powi(2) - 2.0 * x.sqrt();
+        // g((p[0] + p[2]) / p[1])
+        p[0].powf(p[1]) / p[1].powf(p[0])
     };
 
-    let point = [549.12, 1327.5, 10250.65];
-    let error = [0.5e-2, 0.5e-1, 0.5e-2];
+    // let point = [549.12, 1327.5, 10250.65];
+    // let error = [0.5e-2, 0.5e-1, 0.5e-2];
+    let point = [2, 3].map(|x| x as f64);
+    let error = [0.2, 0.3];
 
-    // let _ = cse(func, &point, &error);
+    // let _ = cse_taylor(func, &point, &error);
+    // let _ = cse_fork(func, &point, &error);
 }
 
 fn root_search() {
