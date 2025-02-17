@@ -1,3 +1,4 @@
+use nalgebra::{DMatrix, DVector};
 use tabled::{
     builder::Builder,
     settings::{style::HorizontalLine, Panel, Style, Theme},
@@ -13,7 +14,7 @@ pub type FuncMulti = fn(&[f64]) -> f64;
 /// This type defines a function that takes a single f64 and returns an f64.
 pub type FuncSingle = fn(f64) -> f64;
 
-// Function to compute the gradient of an arbitrary function at a given point.
+/// Computes the gradient of an arbitrary function at a given point.
 pub fn compute_gradient(func: FuncMulti, point: &[f64]) -> Vec<f64> {
     let mut gradient = Vec::with_capacity(point.len());
 
@@ -36,9 +37,24 @@ pub fn compute_gradient(func: FuncMulti, point: &[f64]) -> Vec<f64> {
     gradient
 }
 
-// Function to compute the gradient of an arbitrary function at a given point.
+/// Computes the gradient of an arbitrary function at a given point.
 pub fn compute_derivative(func: FuncSingle, x: f64) -> f64 {
     (func(x + EPSILON) - func(x - EPSILON)) / (2.0 * EPSILON)
+}
+
+/// Computes the function value for the system of equations at a given point.
+pub fn function_vec(system: &[FuncMulti], point: &[f64]) -> DVector<f64> {
+    let data: Vec<_> = system.iter().map(|f| f(point)).collect();
+    DVector::from_vec(data)
+}
+
+/// Computes the gradient of the system of equations at a given point.
+pub fn gradient_mat(system: &[FuncMulti], point: &[f64]) -> DMatrix<f64> {
+    let data: Vec<_> = system
+        .iter()
+        .flat_map(|f| compute_gradient(*f, point))
+        .collect();
+    DMatrix::from_vec(system.len(), point.len(), data).transpose()
 }
 
 /// Defines the possible errors that can occur when formatting a table.

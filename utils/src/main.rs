@@ -1,17 +1,21 @@
 #![allow(unused_variables)]
+
 use nalgebra::{dmatrix, dvector};
 #[allow(unused_imports)]
-use utils::{cse::*, linear_systems::*, norms::*, root_search::*, utils::*};
+use utils::{cse::*, norms::*, root_search::*, systems::*, utils::*};
+
+#[allow(dead_code)]
+const ITERATIONS_MAX: usize = 100;
 
 fn main() {
     error_analysis();
     root_search();
     linear_systems();
     norms();
+    non_linear_systems();
 }
 
 fn error_analysis() {
-    #[allow(unused_variables)]
     let func: FuncMulti = |point| {
         let g = |x: f64| x.powi(2) - 2.0 * x.sqrt();
         g((point[0] + point[2]) / point[1])
@@ -24,9 +28,6 @@ fn error_analysis() {
 }
 
 fn root_search() {
-    #[allow(dead_code)]
-    const ITERATIONS_MAX: usize = 100;
-
     let func: FuncSingle = |x: f64| -3.0 - 3.0 * x + x.powi(2) + x.powi(3);
     let x_tolerance = 5e-4;
     let f_x_tolerance = 1e-5;
@@ -47,13 +48,14 @@ fn root_search() {
     // let _ = newton(func, x_initial, x_tolerance, f_x_tolerance, ITERATIONS_MAX).unwrap();
 
     // Fixed-point method
-    // // To converge, |g'(x_initial)| < 1
+    // To converge, |g'(x_initial)| < 1
     // let g: FuncSingle = |x: f64| (-x.powi(3) - x.powi(2) + 3.0) / -3.0;
     // let x_initial = 0.3;
     // let _ = fixed_point(g, x_initial, x_tolerance, f_x_tolerance, ITERATIONS_MAX).unwrap();
 }
 
 fn linear_systems() {
+    let x_tolerance = 1e-5;
     let a = dmatrix![
         2.0, -1.0, -1.0;
         0.0,  -4.0, 2.0;
@@ -93,23 +95,88 @@ fn linear_systems() {
     // ];
     // let b = dvector![4.0, -3.0, 3.0];
     // let x = least_squares(&a, &b).unwrap();
+
+    // Iterative solve
+    // let a = dmatrix![
+    //     4.0, 2.0;
+    //     2.0, 3.0;
+    // ];
+    // let a_inv = a.clone().try_inverse().unwrap();
+    // let b = dvector![6.0, 5.0];
+    // let x = iterative_solve(&a, &a_inv, &b, 1000).unwrap();
+    // println!("Solution: {}", x);
+
+    // Iterative solvers
+    // let x = jacobi_solver(&a, &b, x_tolerance, ITERATIONS_MAX);
+    // let x = gauss_seidel_solver(&a, &b, x_tolerance, ITERATIONS_MAX);
+    // let x = relaxation_solver(&a, &b, 0.95, x_tolerance, ITERATIONS_MAX);
 }
 
 fn norms() {
     // Vector norm
-    // let v = dvector![1.25, 0.02, -5.15, 0.0];
-    // let norm = norm_vec(&v, 0);
+    // let norm = norm_vec(&b, 0);
     // println!("Norm: {}", norm);
 
     // Matrix norm
-    // let mat = dmatrix![
-    //     2.1, 3.1;
-    //     2.0, 3.0;
-    // ];
     // let norm = norm_mat(&mat, 3);
     // println!("Norm: {}", norm);
 
     // Condition number
-    // let cond = condition_number(&mat, 0).unwrap();
+    // let cond = condition_number(&a, 0).unwrap();
     // println!("Condition number: {}", cond);
+
+    // Error propagation
+    // let a = dmatrix![
+    //     10, 7, 8, 7;
+    //     7, 5, 6, 5;
+    //     8, 6, 10, 9;
+    //     7, 5, 9, 10;
+    // ]
+    // .map(|x| x as f64);
+    // let a_star = dmatrix![
+    //     10.0, 7.0, 8.1, 7.2;
+    //     7.0, 5.01, 6.0, 5.02;
+    //     8.0, 6.0, 10.0, 9.0;
+    //     6.99, 4.99, 9.1, 10.0;
+    // ];
+    // let b = dvector![32, 23, 33, 31].map(|x| x as f64);
+    // let b_star = dvector![32.1, 22.9, 33.1, 30.9];
+    // let range = x_error_range_b(&a, &b, &b_star, 0).unwrap();
+    // let upper = x_error_bound_a(&a, &a_star, 0).unwrap();
+}
+
+fn non_linear_systems() {
+    let x_initial = dvector![-2.0, 1.0];
+    let x_tolerance = 1e-5;
+    let f_x_tolerance = 1e-5;
+
+    // #[rustfmt::skip]
+    // let system: Vec<FuncMulti> = vec![
+    //     |p| p[0].powi(2) + p[1].powi(2) - 4.0,
+    //     |p| p[0].exp() + p[1] - 1.0,
+    // ];
+    //
+    // Newton's method
+    // let x = newton_system(
+    //     &system,
+    //     &x_initial,
+    //     x_tolerance,
+    //     f_x_tolerance,
+    //     ITERATIONS_MAX,
+    // );
+
+    // #[rustfmt::skip]
+    // let system: Vec<FuncMulti> = vec![
+    //     |p| -(4.0 - p[1].powi(2)).sqrt(),
+    //     |p| 1.0 - p[0].exp(),
+    // ];
+    //
+    // Fixed-point method
+    // let x = fixed_point_system(
+    //     &system,
+    //     &x_initial,
+    //     x_tolerance,
+    //     f_x_tolerance,
+    //     ITERATIONS_MAX,
+    // );
 }

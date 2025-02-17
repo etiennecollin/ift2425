@@ -5,10 +5,9 @@ use nalgebra::{DMatrix, DVector};
 /// # Arguments
 ///
 /// - `v`: A vector.
-/// - `p`: The norm to compute.
+/// - `p`: The norm to compute. A value of 0 corresponds to the infinity norm.
 pub fn norm_vec(v: &DVector<f64>, p: u32) -> f64 {
     if p == 0 {
-        println!("Computing the norm with p=infinity");
         v.abs().max()
     } else if p == 1 {
         v.abs().sum()
@@ -24,10 +23,9 @@ pub fn norm_vec(v: &DVector<f64>, p: u32) -> f64 {
 /// # Arguments
 ///
 /// - `mat`: A matrix.
-/// - `p`: The norm to compute.
+/// - `p`: The norm to compute. A value of 0 corresponds to the infinity norm.
 pub fn norm_mat(mat: &DMatrix<f64>, p: u32) -> f64 {
     if p == 0 {
-        println!("Computing the norm with p=infinity");
         mat.abs().column_sum().max()
     } else if p == 1 {
         mat.abs().row_sum().max()
@@ -49,7 +47,7 @@ pub fn norm_mat(mat: &DMatrix<f64>, p: u32) -> f64 {
 /// # Arguments
 ///
 /// - `mat`: A matrix.
-/// - `p`: The norm to compute.
+/// - `p`: The norm to compute. A value of 0 corresponds to the infinity norm.
 pub fn condition_number(mat: &DMatrix<f64>, p: u32) -> Result<f64, &'static str> {
     let mat_inv = match mat.clone().try_inverse() {
         Some(mat_inv) => mat_inv,
@@ -57,4 +55,60 @@ pub fn condition_number(mat: &DMatrix<f64>, p: u32) -> Result<f64, &'static str>
     };
     println!("Inverse: {}", mat_inv);
     Ok(norm_mat(mat, p) * norm_mat(&mat_inv, p))
+}
+
+/// Compute the range of the error on x given that the error on b is known.
+///
+/// # Arguments
+/// - `a`: A matrix.
+/// - `b`: The true b vector.
+/// - `b_star`: The approximated b vector.
+/// - `p`: The norm to use. Use the 1 norm or the 0 (infinite) norm
+pub fn x_error_range_b(
+    a: &DMatrix<f64>,
+    b: &DVector<f64>,
+    b_star: &DVector<f64>,
+    p: u32,
+) -> Result<(f64, f64), &'static str> {
+    if p != 0 && p != 1 {
+        panic!("The vector and matrix norms must be compatible. Use the 1 norm or the 0 (infinite) norm.")
+    }
+
+    let db = b_star - b;
+    let cond = condition_number(a, p)?;
+    let frac = norm_vec(&db, p) / norm_vec(b, p);
+    let range = (cond.recip() * frac, cond * frac);
+
+    println!("Condition number: {}", cond);
+    println!("Fraction: {}", frac);
+    println!("Error range: {:?}", range);
+
+    Ok(range)
+}
+
+/// Compute the upper bound of the error on x given that the error on A is known.
+///
+/// # Arguments
+/// - `a`: The true A matrix.
+/// - `a_star`: The approximated A matrix.
+/// - `p`: The norm to use. Use the 1 norm or the 0 (infinite) norm
+pub fn x_error_bound_a(
+    a: &DMatrix<f64>,
+    a_star: &DMatrix<f64>,
+    p: u32,
+) -> Result<f64, &'static str> {
+    if p != 0 && p != 1 {
+        panic!("The vector and matrix norms must be compatible. Use the 1 norm or the 0 (infinite) norm.")
+    }
+
+    let da = a_star - a;
+    let cond = condition_number(a, p)?;
+    let frac = norm_mat(&da, p) / norm_mat(a, p);
+    let bound = cond * frac;
+
+    println!("Condition number: {}", cond);
+    println!("Fraction: {}", frac);
+    println!("Error upper bound: {}", bound);
+
+    Ok(bound)
 }
