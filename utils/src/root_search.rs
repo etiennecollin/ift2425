@@ -379,7 +379,7 @@ pub fn fixed_point(
     f_x_tolerance: f64,
     iterations_max: usize,
 ) -> Result<f64, &'static str> {
-    if compute_derivative(f, x_initial) >= 1.0 {
+    if compute_derivative(f, x_initial).abs() >= 1.0 {
         return Err("The derivative of the function at the initial point must be less than 1 for convergence");
     }
 
