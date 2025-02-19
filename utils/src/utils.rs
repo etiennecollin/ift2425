@@ -42,6 +42,19 @@ pub fn compute_derivative(func: FuncSingle, x: f64) -> f64 {
     (func(x + EPSILON) - func(x - EPSILON)) / (2.0 * EPSILON)
 }
 
+// /// Computes the n-th derivative of an arbitrary function at a given point.
+// ///
+// /// WARNING: There are precision issues with n > 2
+// pub fn compute_nth_derivative(func: FuncSingle, x: f64, n: u64) -> f64 {
+//     let sum = (0..=n).fold(0.0, |acc, k| {
+//         let sign = if (k + n) % 2 == 0 { 1.0 } else { -1.0 };
+//         let binom = binomial(n, k) as f64;
+//         let fx = func(x + (k as f64) * EPSILON);
+//         acc + sign * binom * fx
+//     });
+//     sum / EPSILON.powi(n as i32)
+// }
+
 /// Computes the function value for the system of equations at a given point.
 pub fn function_vec(system: &[FuncMulti], point: &[f64]) -> DVector<f64> {
     let data: Vec<_> = system.iter().map(|f| f(point)).collect();
