@@ -1,11 +1,14 @@
-#![allow(unused_variables)]
+#![allow(unused_variables, dead_code)]
+
+use std::f64::consts::PI;
 
 use nalgebra::{dmatrix, dvector};
 #[allow(unused_imports)]
 use utils::{cse::*, norms::*, root_search::*, systems::*, utils::*};
 
-#[allow(dead_code)]
 const ITERATIONS_MAX: usize = 100;
+const X_TOLERANCE: f64 = 1e-5;
+const F_X_TOLERANCE: f64 = 1e-5;
 
 fn main() {
     error_analysis();
@@ -17,15 +20,12 @@ fn main() {
 
 fn error_analysis() {
     let func: FuncMulti = |p| {
-        // let g = |x: f64| x.powi(2) - 2.0 * x.sqrt();
-        // g((p[0] + p[2]) / p[1])
-        p[0].powf(p[1]) / p[1].powf(p[0])
+        let g = |x: f64| x.powi(2) - 2.0 * x.sqrt();
+        g((p[0] + p[2]) / p[1])
     };
 
-    // let point = [549.12, 1327.5, 10250.65];
-    // let error = [0.5e-2, 0.5e-1, 0.5e-2];
-    let point = [2, 3].map(|x| x as f64);
-    let error = [0.2, 0.3];
+    let point = [549.12, 1327.5, 10250.65];
+    let error = [0.5e-2, 0.5e-1, 0.5e-2];
 
     // let _ = cse_taylor(func, &point, &error);
     // let _ = cse_fork(func, &point, &error);
@@ -33,33 +33,38 @@ fn error_analysis() {
 
 fn root_search() {
     let func: FuncSingle = |x: f64| -3.0 - 3.0 * x + x.powi(2) + x.powi(3);
-    let x_tolerance = 5e-4;
-    let f_x_tolerance = 1e-5;
-    let x_initial = 2.0; // Only for Newton's method
-    let interval = (1.0, 2.0); // Only for bissection, linear interpolation and secant
+    let interval = (PI / 3.0, PI / 2.0); // Only for bissection, linear interpolation and secant
 
     // Bissection method
-    // let _ = bissection(func, interval, x_tolerance, f_x_tolerance, ITERATIONS_MAX).unwrap();
+    // let iter = get_bissection_iterations(interval, 1e-4);
+    // let _ = bissection(func, interval, X_TOLERANCE, F_X_TOLERANCE, ITERATIONS_MAX).unwrap();
 
     // Linear interpolation method
     // let _ =
-    //     linear_interpolation(func, interval, x_tolerance, f_x_tolerance, ITERATIONS_MAX).unwrap();
+    //     linear_interpolation(func, interval, X_TOLERANCE, F_X_TOLERANCE, ITERATIONS_MAX).unwrap();
 
     // Secant method
-    // let _ = secant(func, interval, x_tolerance, f_x_tolerance, ITERATIONS_MAX).unwrap();
+    // let _ = secant(func, interval, X_TOLERANCE, F_X_TOLERANCE, ITERATIONS_MAX).unwrap();
 
     // Newton's method
-    // let _ = newton(func, x_initial, x_tolerance, f_x_tolerance, ITERATIONS_MAX).unwrap();
+    // To converge, |f'(x_initial)| > 0
+    // let x_initial = 2.0;
+    // let _ = newton(func, x_initial, X_TOLERANCE, F_X_TOLERANCE, ITERATIONS_MAX).unwrap();
 
     // Fixed-point method
     // To converge, |g'(x_initial)| < 1
-    // let g: FuncSingle = |x: f64| (-x.powi(3) - x.powi(2) + 3.0) / -3.0;
-    // let x_initial = 0.3;
-    // let _ = fixed_point(g, x_initial, x_tolerance, f_x_tolerance, ITERATIONS_MAX).unwrap();
+    // let g: FuncSingle = |x: f64| x.ln().acos();
+    // let x_initial = 1.3;
+    let f: FuncSingle = |x: f64| x.exp() - x.recip();
+    let g: FuncSingle = |x: f64| (-x).exp();
+    let interval = (0.5, 1.0);
+    let max_error = 1e-2;
+    // let _ = get_fixed_point_iterations_mvt(f, g, interval, max_error);
+    // let _ = get_fixed_point_x_tolerance_fit(f, g, interval, max_error);
+    // let _ = fixed_point(g, x_initial, X_TOLERANCE, F_X_TOLERANCE, ITERATIONS_MAX).unwrap();
 }
 
 fn linear_systems() {
-    let x_tolerance = 1e-5;
     let a = dmatrix![
         2.0, -1.0, -1.0;
         0.0,  -4.0, 2.0;
@@ -111,9 +116,9 @@ fn linear_systems() {
     // println!("Solution: {}", x);
 
     // Iterative solvers
-    // let x = jacobi_solver(&a, &b, x_tolerance, ITERATIONS_MAX);
-    // let x = gauss_seidel_solver(&a, &b, x_tolerance, ITERATIONS_MAX);
-    // let x = relaxation_solver(&a, &b, 0.95, x_tolerance, ITERATIONS_MAX);
+    // let x = jacobi_solver(&a, &b, X_TOLERANCE, ITERATIONS_MAX);
+    // let x = gauss_seidel_solver(&a, &b, X_TOLERANCE, ITERATIONS_MAX);
+    // let x = relaxation_solver(&a, &b, 0.95, X_TOLERANCE, ITERATIONS_MAX);
 }
 
 fn norms() {
@@ -151,8 +156,6 @@ fn norms() {
 
 fn non_linear_systems() {
     let x_initial = dvector![-2.0, 1.0];
-    let x_tolerance = 1e-5;
-    let f_x_tolerance = 1e-5;
 
     // #[rustfmt::skip]
     // let system: Vec<FuncMulti> = vec![
@@ -164,8 +167,8 @@ fn non_linear_systems() {
     // let x = newton_system(
     //     &system,
     //     &x_initial,
-    //     x_tolerance,
-    //     f_x_tolerance,
+    //     X_TOLERANCE,
+    //     F_X_TOLERANCE,
     //     ITERATIONS_MAX,
     // );
 
@@ -179,8 +182,8 @@ fn non_linear_systems() {
     // let x = fixed_point_system(
     //     &system,
     //     &x_initial,
-    //     x_tolerance,
-    //     f_x_tolerance,
+    //     X_TOLERANCE,
+    //     F_X_TOLERANCE,
     //     ITERATIONS_MAX,
     // );
 }
