@@ -2,7 +2,21 @@ use crate::utils::{compute_derivative, table_formatter, FuncSingle};
 
 /// Compute the number of iterations needed to reach the error threshold using the bissection method.
 pub fn get_bissection_iterations(interval: (f64, f64), max_error: f64) -> usize {
-    ((interval.1 - interval.0).abs() / max_error).log2().ceil() as usize
+    let iterations = ((interval.1 - interval.0).abs() / max_error).log2().ceil() as usize;
+
+    println!("╭───────────────");
+    println!("│ Bissection method");
+    println!("├─");
+    println!("│ |b - a| / 2^n = error");
+    println!(
+        "│ |{:.3} - {:.3}| / 2^n = {:.3e}",
+        interval.1, interval.0, max_error
+    );
+    println!("├─");
+    println!("│ Convergence after {} iterations", iterations);
+    println!("╰───────────────");
+
+    iterations
 }
 
 /// This function computes the root of a function using the bissection method.
@@ -310,6 +324,10 @@ pub fn newton(
     let mut x2 = x_initial;
     let mut f_x = f(x_initial);
     let mut f_x_derivative = compute_derivative(f, x_initial);
+    assert_ne!(
+        f_x_derivative, 0.0,
+        "The derivative of the function at the initial point must be different from zero"
+    );
 
     // Compute Newton's method and prepare the rows of the table
     let mut rows: Vec<Vec<String>> = Vec::with_capacity(iterations_max);
@@ -319,6 +337,10 @@ pub fn newton(
         x2 = x1 - f_x / f_x_derivative;
         f_x = f(x2);
         f_x_derivative = compute_derivative(f, x2);
+        assert_ne!(
+            f_x_derivative, 0.0,
+            "The derivative of the function at the point must be different from zero"
+        );
 
         // Store the information for the table
         rows.push(
@@ -361,6 +383,159 @@ pub fn newton(
     println!("{}", table);
 
     Ok(x2)
+}
+/// Computes the number of iterations needed to reach the error threshold using the fixed point method.
+///
+/// This uses the finite increment theorem.
+///
+/// # Arguments
+///
+/// - `f`: The initial function
+/// - `g`: The formulation of f as g(x) = x
+/// - `interval`: A tuple representing the interval where the root is located.
+/// - `error_threshold`: The maximum error allowed for the root.
+pub fn get_fixed_point_x_tolerance_fit(
+    f: FuncSingle,
+    g: FuncSingle,
+    interval: (f64, f64),
+    error_threshold: f64,
+) -> f64 {
+    // Check that a < b
+    assert!(
+        interval.0 < interval.1,
+        "The interval must be such that a < b"
+    );
+
+    // Check that the function crosses the x-axis
+    assert!(
+        f(interval.0) * f(interval.1) < 0.0,
+        "f(a)f(b) must be less than zero"
+    );
+
+    // Get max value of g'(x) on the interval
+    let derivative_a = compute_derivative(g, interval.0).abs();
+    let derivative_b = compute_derivative(g, interval.1).abs();
+    let max_derivative = derivative_a.max(derivative_b);
+
+    // Check that the derivative is less than 1 for convergence
+    assert!(
+        max_derivative < 1.0,
+        "The derivative of the function must be less than 1 for convergence"
+    );
+
+    // Compute the x tolerance
+    let max_derivative_frac = 1.0 / (1.0 - max_derivative).abs();
+    let x_tolerance = error_threshold / max_derivative_frac;
+
+    // Print results
+    println!("╭───────────────");
+    println!("│ Finite increment theorem");
+    println!("├─");
+    println!("│ Assuming:");
+    println!("│ That f is continuous and monotonic on the interval where the root is located");
+    println!("│ That f crosses the x-axis on the interval: f(a)f(b) < 0");
+    println!("│ That there is a unique root in the interval: f'(x) > 0 on the interval");
+    println!("├─");
+    println!("│ f(a) = {}", f(interval.0));
+    println!("│ f(b) = {}", f(interval.1));
+    println!("├─");
+    println!("│ Using the finite increment theorem.");
+    println!("│ r_(n+1) - r_n = (r_(n+1) - r) - (r_n - r)");
+    println!("│               = (g(r_n) - g(r)) - (r_n - r)");
+    println!("│               = ((g(r_n) - g(r)) - (r_n - r)) / (r_n - r) * (r_n - r)");
+    println!("│               = (g'(ζ) - 1) * (r_n - r) with ζ between r_n and r");
+    println!("│ Therefore, |r_n - r| = 1/|1 - g'(ζ)| * |r_(n+1) - r_n| for all x in the interval");
+    println!(
+        "│ Knowing that |g'(ζ)| ≤ {:.3}, we have that 1/|1 - g'(ζ)| ≤ {:.3}",
+        max_derivative, max_derivative_frac
+    );
+    println!(
+        "│ Hence, |r_n - r| ≤ {:.3} * |r_(n+1) - r_n|",
+        max_derivative_frac,
+    );
+    println!("├─");
+    println!("│ Therefore, if we want an error |r_n - r| < {:e}, we can choose a n (stop the algo) when:", error_threshold);
+    println!(
+        "│ |r_(n+1) - r_n| ≤ {:e} / {:.3} ≈ {:.3e}",
+        error_threshold, max_derivative_frac, x_tolerance
+    );
+    println!("╰───────────────");
+
+    x_tolerance
+}
+
+/// Computes the number of iterations needed to reach the error threshold using the fixed point method.
+///
+/// This uses the mean value theorem.
+///
+/// # Arguments
+///
+/// - `f`: The initial function
+/// - `g`: The formulation of f as g(x) = x
+/// - `interval`: A tuple representing the interval where the root is located.
+/// - `error_threshold`: The maximum error allowed for the root.
+pub fn get_fixed_point_iterations_mvt(
+    f: FuncSingle,
+    g: FuncSingle,
+    interval: (f64, f64),
+    error_threshold: f64,
+) -> usize {
+    // Check that a < b
+    assert!(
+        interval.0 < interval.1,
+        "The interval must be such that a < b"
+    );
+
+    // Check that the function crosses the x-axis
+    assert!(
+        f(interval.0) * f(interval.1) < 0.0,
+        "f(a)f(b) must be less than zero"
+    );
+
+    // Get max value of g'(x) on the interval
+    let derivative_a = compute_derivative(g, interval.0).abs();
+    let derivative_b = compute_derivative(g, interval.1).abs();
+    let max_derivative = derivative_a.max(derivative_b);
+
+    // Check that the derivative is less than 1 for convergence
+    assert!(
+        max_derivative < 1.0,
+        "The derivative of the function must be less than 1 for convergence"
+    );
+
+    // Compute the number of iterations
+    let max_error = interval.1 - interval.0;
+    let iterations = (error_threshold / max_error).log(max_derivative).ceil() as usize;
+
+    // Print results
+    println!("╭───────────────");
+    println!("│ Mean value theorem");
+    println!("├─");
+    println!("│ Assuming:");
+    println!("│ That f is continuous and monotonic on the interval where the root is located");
+    println!("│ That f crosses the x-axis on the interval: f(a)f(b) < 0");
+    println!("│ That there is a unique root in the interval: f'(x) > 0 on the interval");
+    println!("├─");
+    println!("│ f(a) = {}", f(interval.0));
+    println!("│ f(b) = {}", f(interval.1));
+    println!("├─");
+    println!("│ Using the mean value theorem.");
+    println!("│ r_n - r = (g(r_(n-1)) - g(r)) / (r_(n-1) - r) * (r_(n-1) - r)");
+    println!("│         = g'(ζ) * (r_(n-1) - r) with ζ in interval");
+    println!("│ Knowing that |g'(ζ)| ≤ {:.3}", max_derivative);
+    println!(
+        "│ We have |r_n - r| ≤ {:.3} * |r_(n-1) - r| ≤ ... ≤ {:.3}^n * |r_0 - r| ≤ {:.3}^n * (b-a) = {:.3}^n * {:.3e}",
+        max_derivative, max_derivative, max_derivative, max_error, max_error
+    );
+    println!(
+        "│ Therefore, |r_n - r| ≤ {:.3}^n * {:.3e} ≤ {:.3e}",
+        max_derivative, max_error, error_threshold
+    );
+    println!("├─");
+    println!("│ Convergence after a maximum of {} iterations", iterations);
+    println!("╰───────────────");
+
+    iterations
 }
 
 /// This function computes the root of a function using the fixed point method.
