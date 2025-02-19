@@ -2,7 +2,7 @@ use crate::utils::{compute_gradient, FuncMulti};
 
 /// Compute the position of the significant digit in the error.
 fn compute_sig_position(error: f64) -> i32 {
-    -(error * 2.0).log10().ceil() as i32
+    (error * 2.0).log10().ceil() as i32
 }
 
 /// Round a number to the given number of digits.
@@ -34,8 +34,8 @@ pub fn cse_taylor(f: FuncMulti, point: &[f64], error: &[f64]) -> f64 {
     let r = compute_sig_position(df);
 
     // Round to r decimal places
-    let res_rounded = round_to_digits(res, r);
-    let df_rounded = round_to_digits(df, r + 1);
+    let res_rounded = round_to_digits(res, -r);
+    let df_rounded = round_to_digits(df, -r + 2);
 
     // Print results
     println!("╭───────────────");
@@ -46,9 +46,9 @@ pub fn cse_taylor(f: FuncMulti, point: &[f64], error: &[f64]) -> f64 {
     println!("│ Δf = {}", df);
     println!("│ Δf/f = {:.3}%", df / res * 100.0);
     println!("├─");
-    println!("│ Δf < 0.5 * 10^r -> r = {}", -r);
+    println!("│ Δf < 0.5 * 10^r -> r = {}", r);
     println!(
-        "│ f(point) = {} += {} or {:.3}%",
+        "│ f(point) = {} ± {} or {:.3}%",
         res_rounded,
         df_rounded,
         df / res * 100.0
@@ -111,8 +111,8 @@ pub fn cse_fork(f: FuncMulti, point: &[f64], error: &[f64]) -> f64 {
 
     // Round to r decimal places
     let res = f(point);
-    let res_rounded = round_to_digits(res, r);
-    let df_rounded = round_to_digits(df, r + 1);
+    let res_rounded = round_to_digits(res, -r);
+    let df_rounded = round_to_digits(df, -r + 2);
 
     println!("╭───────────────");
     println!("│ f*(point) = {}", res);
@@ -123,9 +123,9 @@ pub fn cse_fork(f: FuncMulti, point: &[f64], error: &[f64]) -> f64 {
     println!("│ Δf = {}", df);
     println!("│ Δf/f = {:.3}%", df / res * 100.0);
     println!("├─");
-    println!("│ Δf < 0.5 * 10^r -> r = {}", -r);
+    println!("│ Δf < 0.5 * 10^r -> r = {}", r);
     println!(
-        "│ f(point) = {} += {} or {:.3}%",
+        "│ f(point) = {} ± {} or {:.3}%",
         res_rounded,
         df_rounded,
         df / res * 100.0
