@@ -1,6 +1,6 @@
 use nalgebra::{DMatrix, DVector};
 
-/// Compute the p-norm of a vector.
+/// Computes the p-norm of a vector.
 ///
 /// # Arguments
 ///
@@ -18,7 +18,7 @@ pub fn norm_vec(v: &DVector<f64>, p: u32) -> f64 {
     }
 }
 
-/// Compute the p-norm of a matrix.
+/// Computes the p-norm of a matrix.
 ///
 /// # Arguments
 ///
@@ -40,7 +40,7 @@ pub fn norm_mat(mat: &DMatrix<f64>, p: u32) -> f64 {
     }
 }
 
-/// Compute the condition number of a matrix.
+/// Computes the condition number of a matrix.
 ///
 /// A matrix is well conditioned if its condition number is close to 1.
 ///

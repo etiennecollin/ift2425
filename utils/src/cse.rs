@@ -1,6 +1,6 @@
 use crate::utils::{compute_gradient, FuncMulti};
 
-/// Compute the position of the last significant digit in the error.
+/// Computes the position of the last significant digit in the error.
 ///
 /// # Arguments
 ///

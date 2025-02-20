@@ -1,6 +1,6 @@
 use crate::utils::{compute_derivative, table_formatter, FuncSingle};
 
-/// Compute the number of iterations needed to reach the error threshold using the bissection method.
+/// Computes the number of iterations needed to reach the error threshold using the bissection method.
 ///
 /// # Arguments
 ///
