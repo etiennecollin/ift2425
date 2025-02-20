@@ -10,7 +10,7 @@ fi
 rm -rf ../docs
 mkdir -p ../docs
 cp -r ./target/doc/* ../docs
-echo "<meta http-equiv=\"refresh\" content=\"0; url=client/index.html\">" >../docs/index.html
+echo "<meta http-equiv=\"refresh\" content=\"0; url=utils/index.html\">" >../docs/index.html
 echo "ift2425.etiennecollin.com" >../docs/CNAME
 
 git add ../docs
