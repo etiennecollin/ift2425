@@ -2,8 +2,8 @@
     a: &amp;<a class="type" href="https://docs.rs/nalgebra/0.25.0/nalgebra/base/alias/type.DMatrix.html" title="type nalgebra::base::alias::DMatrix">DMatrix</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.84.1/std/primitive.f64.html">f64</a>&gt;,
     b: &amp;<a class="type" href="https://docs.rs/nalgebra/0.25.0/nalgebra/base/alias/type.DVector.html" title="type nalgebra::base::alias::DVector">DVector</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.84.1/std/primitive.f64.html">f64</a>&gt;,
 ) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.84.1/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="type" href="https://docs.rs/nalgebra/0.25.0/nalgebra/base/alias/type.DVector.html" title="type nalgebra::base::alias::DVector">DVector</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.84.1/std/primitive.f64.html">f64</a>&gt;, &amp;'static <a class="primitive" href="https://doc.rust-lang.org/1.84.1/std/primitive.str.html">str</a>&gt;</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Computes the solution of a linear system that minimizes the error on the solution.</p>
-<p>Overdetermined system with the form Ax = b may not have a solution.
-We find x_0 that minimizes r = A x - b</p>
+<p>An overdetermined system with the form <code>Ax = b</code> may not have a solution.
+We find the <code>x</code> that minimizes <code>r = Ax - b</code></p>
 <h2 id="arguments"><a class="doc-anchor" href="#arguments">§</a>Arguments</h2>
 <ul>
 <li><code>a</code>: The A matrix.</li>
@@ -11,6 +11,6 @@ We find x_0 that minimizes r = A x - b</p>
 </ul>
 <h2 id="errors"><a class="doc-anchor" href="#errors">§</a>Errors</h2>
 <ul>
-<li>If matrix A is singular.</li>
+<li>If matrix <code>a</code> is singular.</li>
 </ul>
 </div></details></section></div></main></body></html>

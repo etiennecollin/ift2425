@@ -413,8 +413,8 @@ pub fn solve_gauss(
 
 /// Computes the solution of a linear system that minimizes the error on the solution.
 ///
-/// Overdetermined system with the form Ax = b may not have a solution.
-/// We find x_0 that minimizes r = A x - b
+/// An overdetermined system with the form `Ax = b` may not have a solution.
+/// We find the `x` that minimizes `r = Ax - b`
 ///
 /// # Arguments
 ///
@@ -423,7 +423,7 @@ pub fn solve_gauss(
 ///
 /// # Errors
 ///
-/// - If matrix A is singular.
+/// - If matrix `a` is singular.
 pub fn least_squares(a: &DMatrix<f64>, b: &DVector<f64>) -> Result<DVector<f64>, &'static str> {
     let a_t = a.transpose();
     let a_t_a = &a_t * a;
