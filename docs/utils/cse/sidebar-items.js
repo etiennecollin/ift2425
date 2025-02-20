@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["compute_sig_position","cse_fork","cse_taylor","round_to_digits"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["EPSILON"],"enum":["TableError"],"fn":["compute_derivative","compute_gradient","function_vec","gradient_mat","table_formatter"],"type":["FuncMulti","FuncSingle"]};

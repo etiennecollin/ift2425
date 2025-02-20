@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["bissection","fixed_point","get_bissection_iterations","get_fixed_point_iterations_mvt","get_fixed_point_x_tolerance_fit","linear_interpolation","newton","secant"]};
