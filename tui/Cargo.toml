@@ -18,4 +18,5 @@ tui-textarea = "0.7.0"
 strum = { version = "0.26.3", features = ["derive"] }
 evalexpr = "12.0.2"
 # evalexpr = "12.0.2"
+utils = { path = "../utils" }
 
