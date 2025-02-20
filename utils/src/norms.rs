@@ -48,6 +48,10 @@ pub fn norm_mat(mat: &DMatrix<f64>, p: u32) -> f64 {
 ///
 /// - `mat`: A matrix.
 /// - `p`: The norm to compute. A value of 0 corresponds to the infinity norm.
+///
+/// # Errors
+///
+/// - If the matrix is singular.
 pub fn condition_number(mat: &DMatrix<f64>, p: u32) -> Result<f64, &'static str> {
     let mat_inv = match mat.clone().try_inverse() {
         Some(mat_inv) => mat_inv,
@@ -57,13 +61,19 @@ pub fn condition_number(mat: &DMatrix<f64>, p: u32) -> Result<f64, &'static str>
     Ok(norm_mat(mat, p) * norm_mat(&mat_inv, p))
 }
 
-/// Compute the range of the error on x given that the error on b is known.
+/// Computes the range of the error on x given that the error on b is known.
 ///
 /// # Arguments
+///
 /// - `a`: A matrix.
 /// - `b`: The true b vector.
 /// - `b_star`: The approximated b vector.
 /// - `p`: The norm to use. Use the 1 norm or the 0 (infinite) norm
+///
+/// # Errors
+///
+/// - If the matrix is singular.
+/// - If the vector norm is not compatible with the matrix norm.
 pub fn x_error_range_b(
     a: &DMatrix<f64>,
     b: &DVector<f64>,
@@ -71,7 +81,7 @@ pub fn x_error_range_b(
     p: u32,
 ) -> Result<(f64, f64), &'static str> {
     if p != 0 && p != 1 {
-        panic!("The vector and matrix norms must be compatible. Use the 1 norm or the 0 (infinite) norm.")
+        return Err("The vector and matrix norms must be compatible. Use the 1 norm or the 0 (infinite) norm.");
     }
 
     let db = b_star - b;
@@ -86,19 +96,24 @@ pub fn x_error_range_b(
     Ok(range)
 }
 
-/// Compute the upper bound of the error on x given that the error on A is known.
+/// Computes the upper bound of the error on x given that the error on A is known.
 ///
 /// # Arguments
+///
 /// - `a`: The true A matrix.
 /// - `a_star`: The approximated A matrix.
 /// - `p`: The norm to use. Use the 1 norm or the 0 (infinite) norm
+///
+/// # Errors
+///
+/// - If the matrix is singular.
 pub fn x_error_bound_a(
     a: &DMatrix<f64>,
     a_star: &DMatrix<f64>,
     p: u32,
 ) -> Result<f64, &'static str> {
     if p != 0 && p != 1 {
-        panic!("The vector and matrix norms must be compatible. Use the 1 norm or the 0 (infinite) norm.")
+        return Err("The vector and matrix norms must be compatible. Use the 1 norm or the 0 (infinite) norm.");
     }
 
     let da = a_star - a;

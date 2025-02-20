@@ -12,9 +12,23 @@ use crate::utils::{function_vec, gradient_mat, table_formatter, FuncMulti};
 ///
 /// - `matrix`: A square matrix of size `n x n`.
 /// - `vector`: A vector of size `n`.
-pub fn solve_cramer(matrix: &DMatrix<f64>, vector: &DVector<f64>) -> DVector<f64> {
+///
+/// # Returns
+///
+/// - The solution vector `x`.
+///
+/// # Errors
+///
+/// - If the matrix is singular.
+pub fn solve_cramer(
+    matrix: &DMatrix<f64>,
+    vector: &DVector<f64>,
+) -> Result<DVector<f64>, &'static str> {
     let mut result = DVector::zeros(vector.len());
     let det = matrix.determinant();
+    if det == 0.0 {
+        return Err("The matrix is singular");
+    }
     println!("╭───────────────────────────────");
     println!("│ Cramer");
     println!("├───────────────────────────────");
@@ -24,6 +38,9 @@ pub fn solve_cramer(matrix: &DMatrix<f64>, vector: &DVector<f64>) -> DVector<f64
         let mut matrix_aux = matrix.clone();
         matrix_aux.set_column(i, vector);
         let det_aux = matrix_aux.determinant();
+        if det_aux == 0.0 {
+            return Err("The matrix is singular");
+        }
         result[i] = det_aux / det;
         println!(
             "│ x_{} = det(A_{})/det(A) = {}/{} = {}",
@@ -35,7 +52,7 @@ pub fn solve_cramer(matrix: &DMatrix<f64>, vector: &DVector<f64>) -> DVector<f64
         );
     }
     println!("╰───────────────────────────────");
-    result
+    Ok(result)
 }
 
 ///putes the solution of a linear system using the triangle method.
@@ -76,14 +93,22 @@ pub fn solve_triangular(
     result
 }
 
-/// Computes the LU decomposition of a matrix without pivoting. The input matrix is modified in-place.
+/// Computes the LU decomposition of a matrix without pivoting.
+/// The input matrix is modified in-place and contains the packed LU decomposition.
 ///
 /// # Arguments
 ///
 /// - `a`: A square matrix of size `n x n`.
-pub fn no_piv_lu_mut(matrix: &mut DMatrix<f64>) {
+///
+/// # Errors
+///
+/// - If the matrix is singular.
+pub fn no_piv_lu_packed_mut(matrix: &mut DMatrix<f64>) -> Result<(), &'static str> {
     let n = matrix.nrows();
-    assert_eq!(n, matrix.ncols(), "The matrix must be square");
+
+    if matrix.ncols() != n {
+        return Err("The matrix must be square");
+    }
 
     // Initialize the first row of U
     for j in 1..n {
@@ -104,17 +129,25 @@ pub fn no_piv_lu_mut(matrix: &mut DMatrix<f64>) {
             matrix[(j, i)] = (matrix[(j, i)] - sum) / matrix[(j, j)];
         }
     }
+
+    Ok(())
 }
 
 /// Computes the LU decomposition of a matrix without pivoting.
 ///
+/// The returned matrix contains the packed LU decomposition.
+///
 /// # Arguments
 ///
 /// - `a`: A square matrix of size `n x n`.
-pub fn no_piv_lu_packed(matrix: &DMatrix<f64>) -> DMatrix<f64> {
+///
+/// # Errors
+///
+/// - If the matrix is singular.
+pub fn no_piv_lu_packed(matrix: &DMatrix<f64>) -> Result<DMatrix<f64>, &'static str> {
     let mut lu = matrix.clone();
-    no_piv_lu_mut(&mut lu);
-    lu
+    no_piv_lu_packed_mut(&mut lu)?;
+    Ok(lu)
 }
 
 /// Computes the LU decomposition of a matrix without pivoting.
@@ -126,9 +159,13 @@ pub fn no_piv_lu_packed(matrix: &DMatrix<f64>) -> DMatrix<f64> {
 /// # Returns
 ///
 /// - A tuple containing the lower triangular matrix `L` and the upper triangular matrix `U`.
-pub fn no_piv_lu(matrix: &DMatrix<f64>) -> (DMatrix<f64>, DMatrix<f64>) {
-    let lu = no_piv_lu_packed(matrix);
-    lu_unpack(&lu)
+///
+/// # Errors
+///
+/// - If the matrix is singular.
+pub fn no_piv_lu(matrix: &DMatrix<f64>) -> Result<(DMatrix<f64>, DMatrix<f64>), &'static str> {
+    let lu = no_piv_lu_packed(matrix)?;
+    Ok(lu_unpack(&lu))
 }
 
 /// Computes the LU decomposition of a matrix with partial pivoting and returns
@@ -138,6 +175,10 @@ pub fn no_piv_lu(matrix: &DMatrix<f64>) -> (DMatrix<f64>, DMatrix<f64>) {
 ///
 /// - `a`: A square matrix of size `n x n`.
 /// - `b`: A vector of size `n`.
+///
+/// # Errors
+///
+/// - If matrix `a` is singular.
 pub fn partial_piv_lu(a: &DMatrix<f64>, b: &DVector<f64>) -> Result<DVector<f64>, &'static str> {
     let decomp = a.clone().lu();
 
@@ -189,6 +230,10 @@ pub fn lu_unpack(lu: &DMatrix<f64>) -> (DMatrix<f64>, DMatrix<f64>) {
 ///
 /// - `a`: A square matrix of size `n x n`.
 /// - `b`: A vector of size `n`.
+///
+/// # Errors
+///
+/// - If matrix `a` is singular.
 pub fn full_piv_lu(a: &DMatrix<f64>, b: &DVector<f64>) -> Result<DVector<f64>, &'static str> {
     let decomp = a.clone().full_piv_lu();
 
@@ -281,6 +326,10 @@ fn create_augmented(a: &DMatrix<f64>, b: &DVector<f64>) -> DMatrix<f64> {
 /// A tuple containing:
 /// - The triangular matrix with 1's on the diagonal.
 /// - The updated vector `b` after the elimination.
+///
+/// # Errors
+///
+/// - If a zero pivot is encountered, meaning the matrix is singular.
 pub fn make_triangular(
     matrix: &DMatrix<f64>,
     b: &DVector<f64>,
@@ -339,12 +388,16 @@ pub fn make_triangular(
 ///
 /// - `matrix`: A square matrix of size `n x n`.
 /// - `b`: A vector of size `n`.
+///
+/// # Errors
+///
+/// - If the matrix is singular.
 pub fn solve_gauss(
     matrix: &DMatrix<f64>,
     b: &DVector<f64>,
     backward_substitution: bool,
-) -> DVector<f64> {
-    let (a, b) = make_triangular(matrix, b, backward_substitution).unwrap();
+) -> Result<DVector<f64>, &'static str> {
+    let (a, b) = make_triangular(matrix, b, backward_substitution)?;
     let x = solve_triangular(&a, &b, backward_substitution);
 
     println!("╭───────────────────────────────");
@@ -355,9 +408,22 @@ pub fn solve_gauss(
     println!("X: {}", x);
     println!("╰───────────────────────────────");
 
-    x
+    Ok(x)
 }
 
+/// Computes the solution of a linear system that minimizes the error on the solution.
+///
+/// Overdetermined system with the form Ax = b may not have a solution.
+/// We find x_0 that minimizes r = A x - b
+///
+/// # Arguments
+///
+/// - `a`: The A matrix.
+/// - `b`: The b vector.
+///
+/// # Errors
+///
+/// - If matrix A is singular.
 pub fn least_squares(a: &DMatrix<f64>, b: &DVector<f64>) -> Result<DVector<f64>, &'static str> {
     let a_t = a.transpose();
     let a_t_a = &a_t * a;
@@ -390,7 +456,7 @@ pub fn iterative_solve(
     a_inv: &DMatrix<f64>,
     b: &DVector<f64>,
     iterations: usize,
-) -> Result<DVector<f64>, &'static str> {
+) -> DVector<f64> {
     // Compute the initial x
     let mut x = a_inv * b;
 
@@ -401,7 +467,7 @@ pub fn iterative_solve(
         x = &x + e;
     });
 
-    Ok(x)
+    x
 }
 
 /// Decomposes a matrix A such that A = L + D + U
@@ -475,7 +541,7 @@ pub fn maximize_diagonal(a: &DMatrix<f64>) -> (DMatrix<f64>, DMatrix<f64>) {
 /// - `i`: The index of the row.
 /// - `v`: The vector to format.
 /// - `e`: The error to format.
-fn create_row(i: usize, v: &DVector<f64>, e: f64) -> Vec<String> {
+fn create_table_row(i: usize, v: &DVector<f64>, e: f64) -> Vec<String> {
     let n = v.len();
     let mut row = Vec::with_capacity(n + 2);
     row.push(format!("{}", i));
@@ -491,7 +557,7 @@ fn create_row(i: usize, v: &DVector<f64>, e: f64) -> Vec<String> {
 /// - `i`: The title of the first index column.
 /// - `n`: The number of elements in the vector.
 /// - `e`: The title of the error column.
-fn create_header(i: &str, n: usize, e: &str) -> Vec<String> {
+fn create_table_header(i: &str, n: usize, e: &str) -> Vec<String> {
     let mut header = Vec::with_capacity(n + 2);
     header.push(i.to_owned());
     (0..n).for_each(|i| header.push(format!("x{}", i + 1)));
@@ -506,7 +572,7 @@ fn create_header(i: &str, n: usize, e: &str) -> Vec<String> {
 /// # Arguments
 ///
 /// - `a`: The matrix to check.
-fn is_diagonally_dominant(a: &DMatrix<f64>) -> bool {
+pub fn is_diagonally_dominant(a: &DMatrix<f64>) -> bool {
     let n = a.nrows();
     for i in 0..n {
         let sum = (0..n).filter(|&j| j != i).map(|j| a[(i, j)].abs()).sum();
@@ -525,12 +591,16 @@ fn is_diagonally_dominant(a: &DMatrix<f64>) -> bool {
 /// - `b`: The b vector.
 /// - `x_tolerance`: The tolerance for the x vector between iterations.
 /// - `iterations_max`: The maximum number of iterations.
+///
+/// # Errors
+///
+/// - If the matrix is not diagonally dominant.
 pub fn jacobi_solver(
     a: &DMatrix<f64>,
     b: &DVector<f64>,
     x_tolerance: f64,
     iterations_max: usize,
-) -> DVector<f64> {
+) -> Result<DVector<f64>, &'static str> {
     let n = a.nrows();
     let mut x_prev = DVector::zeros(n); // Initial guess (zero vector)
     let mut x = DVector::zeros(n);
@@ -539,21 +609,20 @@ pub fn jacobi_solver(
     let (a, _) = maximize_diagonal(a);
     let (l, d_inv, u) = ldu_decomposition(&a, true);
 
-    assert!(
-        is_diagonally_dominant(&a),
-        "The matrix is not diagonally dominant"
-    );
+    if !is_diagonally_dominant(&a) {
+        return Err("The matrix is not diagonally dominant");
+    }
 
     // Prepare the table and start the iterations
     let mut rows: Vec<Vec<String>> = Vec::with_capacity(iterations_max);
-    rows.push(create_row(0, &x, 0.0));
+    rows.push(create_table_row(0, &x, 0.0));
     for iter in 0..iterations_max {
         // Jacobi update formula
         x = -&d_inv * (&l + &u) * &x_prev + &d_inv * b;
         let x_error = (&x - &x_prev).norm();
 
         // Store the information for the table
-        rows.push(create_row(iter + 1, &x, x_error));
+        rows.push(create_table_row(iter + 1, &x, x_error));
 
         // Check for convergence
         if x_error < x_tolerance {
@@ -570,13 +639,13 @@ pub fn jacobi_solver(
         format!("max iterations = {}", iterations_max),
         format!("x = {}", x),
     ];
-    let header = create_header("i", n, "x_error");
+    let header = create_table_header("i", n, "x_error");
 
     // Format and print the table
     let table = table_formatter(info, header, rows).unwrap();
     println!("{}", table);
 
-    x
+    Ok(x)
 }
 
 /// Performs the Gauss-Seidel algorithm to solve the system Ax = b.
@@ -590,12 +659,16 @@ pub fn jacobi_solver(
 /// - `b`: The b vector.
 /// - `x_tolerance`: The tolerance for the x vector between iterations.
 /// - `iterations_max`: The maximum number of iterations.
+///
+/// # Errors
+///
+/// - If the matrix is not diagonally dominant.
 pub fn gauss_seidel_solver(
     a: &DMatrix<f64>,
     b: &DVector<f64>,
     x_tolerance: f64,
     iterations_max: usize,
-) -> DVector<f64> {
+) -> Result<DVector<f64>, &'static str> {
     let n = a.nrows();
     let mut x_prev = DVector::zeros(n); // Initial guess (zero vector)
     let mut x = DVector::zeros(n);
@@ -603,14 +676,13 @@ pub fn gauss_seidel_solver(
     // Prepare the matrix for the Jacobi method
     let (a, _) = maximize_diagonal(a);
 
-    assert!(
-        is_diagonally_dominant(&a),
-        "The matrix is not diagonally dominant"
-    );
+    if !is_diagonally_dominant(&a) {
+        return Err("The matrix is not diagonally dominant");
+    }
 
     // Prepare the table and start the iterations
     let mut rows: Vec<Vec<String>> = Vec::with_capacity(iterations_max);
-    rows.push(create_row(0, &x, 0.0));
+    rows.push(create_table_row(0, &x, 0.0));
     for iter in 0..iterations_max {
         // Update each element of x
         for i in 0..n {
@@ -623,7 +695,7 @@ pub fn gauss_seidel_solver(
         let x_error = (&x - &x_prev).norm();
 
         // Store the information for the table
-        rows.push(create_row(iter + 1, &x, x_error));
+        rows.push(create_table_row(iter + 1, &x, x_error));
 
         // Check for convergence
         if x_error < x_tolerance {
@@ -640,13 +712,13 @@ pub fn gauss_seidel_solver(
         format!("max iterations = {}", iterations_max),
         format!("x = {}", x),
     ];
-    let header = create_header("i", n, "x_error");
+    let header = create_table_header("i", n, "x_error");
 
     // Format and print the table
     let table = table_formatter(info, header, rows).unwrap();
     println!("{}", table);
 
-    x
+    Ok(x)
 }
 
 /// Performs the relaxation method to solve the system Ax = b.
@@ -664,13 +736,17 @@ pub fn gauss_seidel_solver(
 /// - `w`: The relaxation factor.
 /// - `x_tolerance`: The tolerance for the x vector between iterations.
 /// - `iterations_max`: The maximum number of iterations.
+///
+/// # Errors
+///
+/// - If the matrix is not diagonally dominant.
 pub fn relaxation_solver(
     a: &DMatrix<f64>,
     b: &DVector<f64>,
     w: f64,
     x_tolerance: f64,
     iterations_max: usize,
-) -> DVector<f64> {
+) -> Result<DVector<f64>, &'static str> {
     let n = a.nrows();
     let mut x_prev = DVector::zeros(n); // Initial guess (zero vector)
     let mut x = DVector::zeros(n);
@@ -678,14 +754,13 @@ pub fn relaxation_solver(
     // Prepare the matrix for the Jacobi method
     let (a, _) = maximize_diagonal(a);
 
-    assert!(
-        is_diagonally_dominant(&a),
-        "The matrix is not diagonally dominant"
-    );
+    if !is_diagonally_dominant(&a) {
+        return Err("The matrix is not diagonally dominant");
+    }
 
     // Prepare the table and start the iterations
     let mut rows: Vec<Vec<String>> = Vec::with_capacity(iterations_max + 1);
-    rows.push(create_row(0, &x, 0.0));
+    rows.push(create_table_row(0, &x, 0.0));
     for iter in 0..iterations_max {
         // Update each element of x
         for i in 0..n {
@@ -699,7 +774,7 @@ pub fn relaxation_solver(
         let x_error = (&x - &x_prev).norm();
 
         // Store the information for the table
-        rows.push(create_row(iter + 1, &x, x_error));
+        rows.push(create_table_row(iter + 1, &x, x_error));
 
         // Check for convergence
         if x_error < x_tolerance {
@@ -717,22 +792,35 @@ pub fn relaxation_solver(
         format!("max iterations = {}", iterations_max),
         format!("x = {}", x),
     ];
-    let header = create_header("i", n, "x_error");
+    let header = create_table_header("i", n, "x_error");
 
     // Format and print the table
     let table = table_formatter(info, header, rows).unwrap();
     println!("{}", table);
 
-    x
+    Ok(x)
 }
 
+/// Solves non-linear systems using the fixed-point method.
+///
+/// # Arguments
+/// - `system`: A vector of functions representing the system of equations.
+/// - `x_initial`: The initial guess for the solution.
+/// - `x_tolerance`: The tolerance for the x vector between iterations.
+/// - `f_x_tolerance`: The tolerance for the function value.
+/// - `iterations_max`: The maximum number of iterations.
+///
+/// # Errors
+///
+/// - If the sum of the absolute values of the partial derivatives is greater than 1.
+///     This is a necessary condition for the convergence of the fixed-point method.
 pub fn fixed_point_system(
     system: &[FuncMulti],
     x_initial: &DVector<f64>,
     x_tolerance: f64,
     f_x_tolerance: f64,
     iterations_max: usize,
-) -> DVector<f64> {
+) -> Result<DVector<f64>, &'static str> {
     let ncols = x_initial.len();
 
     // Initialize the variables
@@ -740,14 +828,20 @@ pub fn fixed_point_system(
     let mut x = x_initial.clone();
     let mut fx = function_vec(system, x_prev.as_slice());
 
-    assert!(
-        gradient_mat(system, x_prev.as_slice()).abs().row_sum().iter().all(|&x| x < 1.0),
-        "For each variable, the sum of the absolute values of the partial derivatives must be less than 1"
-    );
+    if !gradient_mat(system, x_prev.as_slice())
+        .abs()
+        .row_sum()
+        .iter()
+        .all(|&x| x < 1.0)
+    {
+        return Err(
+            "For each variable, the sum of the absolute values of the partial derivatives must be less than 1",
+        );
+    }
 
     // Prepare the table and start the iterations
     let mut rows: Vec<Vec<String>> = Vec::with_capacity(iterations_max + 1);
-    let mut row = create_row(0, &x, 0.0);
+    let mut row = create_table_row(0, &x, 0.0);
     row.push(format!("{:.6e}", fx));
     rows.push(row);
 
@@ -763,7 +857,7 @@ pub fn fixed_point_system(
         fx = function_vec(system, x_prev.as_slice());
 
         // Store the information for the table
-        let mut row = create_row(iter + 1, &x, x_error);
+        let mut row = create_table_row(iter + 1, &x, x_error);
         row.push(format!("{:.6e}", fx));
         rows.push(row);
 
@@ -781,14 +875,14 @@ pub fn fixed_point_system(
         format!("max iterations = {}", iterations_max),
         format!("x = {}", x),
     ];
-    let mut header = create_header("i", ncols, "x_error");
+    let mut header = create_table_header("i", ncols, "x_error");
     header.push("f(x)".to_owned());
 
     // Format and print the table
     let table = table_formatter(info, header, rows).unwrap();
     println!("{}", table);
 
-    x
+    Ok(x)
 }
 
 /// Solves non-linear systems using the Newton method.
@@ -800,13 +894,17 @@ pub fn fixed_point_system(
 /// - `x_tolerance`: The tolerance for the x vector between iterations.
 /// - `f_x_tolerance`: The tolerance for the function value.
 /// - `iterations_max`: The maximum number of iterations.
+///
+/// # Errors
+///
+/// - If the Jacobian matrix is singular.
 pub fn newton_system(
     system: &[FuncMulti],
     x_initial: &DVector<f64>,
     x_tolerance: f64,
     f_x_tolerance: f64,
     iterations_max: usize,
-) -> DVector<f64> {
+) -> Result<DVector<f64>, &'static str> {
     let ncols = x_initial.len();
 
     // Initialize the variables
@@ -817,17 +915,17 @@ pub fn newton_system(
 
     // Prepare the table and start the iterations
     let mut rows: Vec<Vec<String>> = Vec::with_capacity(iterations_max + 1);
-    let mut row = create_row(0, &x, 0.0);
+    let mut row = create_table_row(0, &x, 0.0);
     row.push(format!("{:.6e}", fx));
     row.push(format!("{:.6}", jacobian));
     rows.push(row);
 
     for iter in 0..iterations_max {
         // Newton update formula
-        let jacobian_inv = jacobian
-            .clone()
-            .try_inverse()
-            .expect("The jacobian is singular");
+        let jacobian_inv = match jacobian.clone().try_inverse() {
+            Some(j) => j,
+            None => return Err("The jacobi matrix is singular"),
+        };
         x = &x_prev - jacobian_inv * &fx;
 
         // Calculate the error
@@ -839,7 +937,7 @@ pub fn newton_system(
         jacobian = gradient_mat(system, x_prev.as_slice());
 
         // Store the information for the table
-        let mut row = create_row(iter + 1, &x, x_error);
+        let mut row = create_table_row(iter + 1, &x, x_error);
         row.push(format!("{:.6e}", fx));
         row.push(format!("{:.6}", jacobian));
         rows.push(row);
@@ -858,7 +956,7 @@ pub fn newton_system(
         format!("max iterations = {}", iterations_max),
         format!("x = {}", x),
     ];
-    let mut header = create_header("i", ncols, "x_error");
+    let mut header = create_table_header("i", ncols, "x_error");
     header.push("f(x)".to_owned());
     header.push("J(x)".to_owned());
 
@@ -866,5 +964,5 @@ pub fn newton_system(
     let table = table_formatter(info, header, rows).unwrap();
     println!("{}", table);
 
-    x
+    Ok(x)
 }

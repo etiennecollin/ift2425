@@ -1,7 +1,24 @@
 use crate::utils::{compute_derivative, table_formatter, FuncSingle};
 
 /// Compute the number of iterations needed to reach the error threshold using the bissection method.
-pub fn get_bissection_iterations(interval: (f64, f64), max_error: f64) -> usize {
+///
+/// # Arguments
+///
+/// - `interval`: A tuple representing the interval where the root is located.
+/// - `max_error`: The maximum error allowed for the root.
+///
+/// # Errors
+///
+/// - If the interval is such that a >= b.
+pub fn get_bissection_iterations(
+    interval: (f64, f64),
+    max_error: f64,
+) -> Result<usize, &'static str> {
+    // Check that a < b
+    if interval.0 >= interval.1 {
+        return Err("The interval must be such that a < b");
+    }
+
     let iterations = ((interval.1 - interval.0).abs() / max_error).log2().ceil() as usize;
 
     println!("╭───────────────");
@@ -16,7 +33,7 @@ pub fn get_bissection_iterations(interval: (f64, f64), max_error: f64) -> usize 
     println!("│ Convergence after {} iterations", iterations);
     println!("╰───────────────");
 
-    iterations
+    Ok(iterations)
 }
 
 /// This function computes the root of a function using the bissection method.
@@ -28,6 +45,11 @@ pub fn get_bissection_iterations(interval: (f64, f64), max_error: f64) -> usize 
 /// - `x_tolerance`: The maximum error allowed for the root.
 /// - `f_x_tolerance`: The maximum error allowed for the function value at the root.
 /// - `iterations_max`: The maximum number of iterations to run the bissection method.
+///
+/// # Errors
+///
+/// - If the interval is such that a >= b.
+/// - If the function does not cross the x-axis (f(a)f(b) < 0).
 pub fn bissection(
     f: FuncSingle,
     interval: (f64, f64),
@@ -35,23 +57,27 @@ pub fn bissection(
     f_x_tolerance: f64,
     iterations_max: usize,
 ) -> Result<f64, &'static str> {
-    // Get the number of iterations
-    let iterations = iterations_max.min(get_bissection_iterations(interval, x_tolerance));
+    // Initialize the interval
+    let mut a = interval.0;
+    let mut b = interval.1;
+
+    // Check that a < b
+    if a >= b {
+        return Err("The interval must be such that a < b");
+    }
 
     // If the number of iterations is 0, return the middle of the interval
+    let iterations = iterations_max.min(get_bissection_iterations(interval, x_tolerance)?);
     if iterations == 0 {
         return Ok((interval.0 + interval.1) / 2.0);
     }
 
-    // Initialize the interval
-    let mut a = interval.0;
-    let mut b = interval.1;
     let f_a = f(a);
     let f_b = f(b);
 
     // Check if the function changes sign in the interval
     if f_a * f_b >= 0.0 {
-        return Err("The function does not change sign in the interval");
+        return Err("f(a)f(b) must be less than zero");
     }
 
     // Compute the bissection method and prepare the rows of the table
@@ -126,6 +152,11 @@ pub fn bissection(
 /// - `x_tolerance`: The maximum error allowed for the root.
 /// - `f_x_tolerance`: The maximum error allowed for the function value at the root.
 /// - `iterations_max`: The maximum number of iterations to run the linear interpolation method.
+///
+/// # Errors
+///
+/// - If the interval is such that a >= b.
+/// - If the function does not cross the x-axis (f(a)f(b) < 0).
 pub fn linear_interpolation(
     f: FuncSingle,
     interval: (f64, f64),
@@ -139,9 +170,14 @@ pub fn linear_interpolation(
     let mut f_a = f(a);
     let mut f_b = f(b);
 
+    // Check that a < b
+    if a >= b {
+        return Err("The interval must be such that a < b");
+    }
+
     // Check if the function changes sign in the interval
     if f_a * f_b >= 0.0 {
-        return Err("The function does not change sign in the interval");
+        return Err("f(a)f(b) must be less than zero");
     }
 
     // Initialize the values
@@ -220,6 +256,11 @@ pub fn linear_interpolation(
 /// - `x_tolerance`: The maximum error allowed for the root.
 /// - `f_x_tolerance`: The maximum error allowed for the function value at the root.
 /// - `iterations_max`: The maximum number of iterations to run the linear interpolation method.
+///
+/// # Errors
+///
+/// - If the interval is such that a >= b.
+/// - If the function does not cross the x-axis (f(a)f(b) < 0).
 pub fn secant(
     f: FuncSingle,
     interval: (f64, f64),
@@ -233,9 +274,14 @@ pub fn secant(
     let mut f_a = f(a);
     let mut f_b = f(b);
 
+    // Check that a < b
+    if a >= b {
+        return Err("The interval must be such that a < b");
+    }
+
     // Check if the function changes sign in the interval
     if f_a * f_b >= 0.0 {
-        return Err("The function does not change sign in the interval");
+        return Err("f(a)f(b) must be less than zero");
     }
 
     // Initialize the values
@@ -312,6 +358,11 @@ pub fn secant(
 /// - `x_tolerance`: The maximum error allowed for the root.
 /// - `f_x_tolerance`: The maximum error allowed for the function value at the root.
 /// - `iterations_max`: The maximum number of iterations to run the Newton's method.
+///
+/// # Errors
+///
+/// - If the derivative of the function at the initial point is equal to zero.
+/// - If the derivative of the function is equal to zero around the root.
 pub fn newton(
     f: FuncSingle,
     x_initial: f64,
@@ -324,10 +375,12 @@ pub fn newton(
     let mut x2 = x_initial;
     let mut f_x = f(x_initial);
     let mut f_x_derivative = compute_derivative(f, x_initial);
-    assert_ne!(
-        f_x_derivative, 0.0,
-        "The derivative of the function at the initial point must be different from zero"
-    );
+
+    if f_x_derivative == 0.0 {
+        return Err(
+            "The derivative of the function at the initial point must be different from zero",
+        );
+    }
 
     // Compute Newton's method and prepare the rows of the table
     let mut rows: Vec<Vec<String>> = Vec::with_capacity(iterations_max);
@@ -337,10 +390,12 @@ pub fn newton(
         x2 = x1 - f_x / f_x_derivative;
         f_x = f(x2);
         f_x_derivative = compute_derivative(f, x2);
-        assert_ne!(
-            f_x_derivative, 0.0,
-            "The derivative of the function at the point must be different from zero"
-        );
+
+        if f_x_derivative == 0.0 {
+            return Err(
+                "The derivative of the function must be different from zero around the root",
+            );
+        }
 
         // Store the information for the table
         rows.push(
@@ -384,7 +439,8 @@ pub fn newton(
 
     Ok(x2)
 }
-/// Computes the number of iterations needed to reach the error threshold using the fixed point method.
+
+/// Computes the tolerance to use on x for the fixed point method to reach the error threshold.
 ///
 /// This uses the finite increment theorem.
 ///
@@ -394,23 +450,27 @@ pub fn newton(
 /// - `g`: The formulation of f as g(x) = x
 /// - `interval`: A tuple representing the interval where the root is located.
 /// - `error_threshold`: The maximum error allowed for the root.
+///
+/// # Errors
+///
+/// - If the interval is such that a >= b.
+/// - If the function does not cross the x-axis (f(a)f(b) < 0).
+/// - If the derivative of the function is greater or equal to 1.
 pub fn get_fixed_point_x_tolerance_fit(
     f: FuncSingle,
     g: FuncSingle,
     interval: (f64, f64),
     error_threshold: f64,
-) -> f64 {
+) -> Result<f64, &'static str> {
     // Check that a < b
-    assert!(
-        interval.0 < interval.1,
-        "The interval must be such that a < b"
-    );
+    if interval.0 >= interval.1 {
+        return Err("The interval must be such that a < b");
+    }
 
     // Check that the function crosses the x-axis
-    assert!(
-        f(interval.0) * f(interval.1) < 0.0,
-        "f(a)f(b) must be less than zero"
-    );
+    if f(interval.0) * f(interval.1) >= 0.0 {
+        return Err("f(a)f(b) must be less than zero");
+    }
 
     // Get max value of g'(x) on the interval
     let derivative_a = compute_derivative(g, interval.0).abs();
@@ -418,10 +478,9 @@ pub fn get_fixed_point_x_tolerance_fit(
     let max_derivative = derivative_a.max(derivative_b);
 
     // Check that the derivative is less than 1 for convergence
-    assert!(
-        max_derivative < 1.0,
-        "The derivative of the function must be less than 1 for convergence"
-    );
+    if max_derivative >= 1.0 {
+        return Err("The derivative of the function must be less than 1 for convergence");
+    }
 
     // Compute the x tolerance
     let max_derivative_frac = 1.0 / (1.0 - max_derivative).abs();
@@ -461,7 +520,7 @@ pub fn get_fixed_point_x_tolerance_fit(
     );
     println!("╰───────────────");
 
-    x_tolerance
+    Ok(x_tolerance)
 }
 
 /// Computes the number of iterations needed to reach the error threshold using the fixed point method.
@@ -474,23 +533,28 @@ pub fn get_fixed_point_x_tolerance_fit(
 /// - `g`: The formulation of f as g(x) = x
 /// - `interval`: A tuple representing the interval where the root is located.
 /// - `error_threshold`: The maximum error allowed for the root.
+///
+/// # Errors
+///
+/// - If the interval is such that a >= b.
+/// - If the function does not cross the x-axis (f(a)f(b) < 0).
+/// - If the derivative of the function is greater or equal to 1.
 pub fn get_fixed_point_iterations_mvt(
     f: FuncSingle,
     g: FuncSingle,
     interval: (f64, f64),
     error_threshold: f64,
-) -> usize {
+) -> Result<usize, &'static str> {
     // Check that a < b
-    assert!(
-        interval.0 < interval.1,
-        "The interval must be such that a < b"
-    );
+
+    if interval.0 >= interval.1 {
+        return Err("The interval must be such that a < b");
+    }
 
     // Check that the function crosses the x-axis
-    assert!(
-        f(interval.0) * f(interval.1) < 0.0,
-        "f(a)f(b) must be less than zero"
-    );
+    if f(interval.0) * f(interval.1) >= 0.0 {
+        return Err("f(a)f(b) must be less than zero");
+    }
 
     // Get max value of g'(x) on the interval
     let derivative_a = compute_derivative(g, interval.0).abs();
@@ -498,10 +562,9 @@ pub fn get_fixed_point_iterations_mvt(
     let max_derivative = derivative_a.max(derivative_b);
 
     // Check that the derivative is less than 1 for convergence
-    assert!(
-        max_derivative < 1.0,
-        "The derivative of the function must be less than 1 for convergence"
-    );
+    if max_derivative >= 1.0 {
+        return Err("The derivative of the function must be less than 1 for convergence");
+    }
 
     // Compute the number of iterations
     let max_error = interval.1 - interval.0;
@@ -535,7 +598,7 @@ pub fn get_fixed_point_iterations_mvt(
     println!("│ Convergence after a maximum of {} iterations", iterations);
     println!("╰───────────────");
 
-    iterations
+    Ok(iterations)
 }
 
 /// This function computes the root of a function using the fixed point method.
@@ -547,6 +610,10 @@ pub fn get_fixed_point_iterations_mvt(
 /// - `x_tolerance`: The maximum error allowed for the root.
 /// - `f_x_tolerance`: The maximum error allowed for the function value at the root.
 /// - `iterations_max`: The maximum number of iterations to run the Newton's method.
+///
+/// # Errors
+///
+/// - If the derivative of the function at the initial point is greater or equal to 1.
 pub fn fixed_point(
     f: FuncSingle,
     x_initial: f64,

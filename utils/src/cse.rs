@@ -1,11 +1,20 @@
 use crate::utils::{compute_gradient, FuncMulti};
 
-/// Compute the position of the significant digit in the error.
+/// Compute the position of the last significant digit in the error.
+///
+/// # Arguments
+///
+/// - `error`: The error on the function.
 fn compute_sig_position(error: f64) -> i32 {
     (error * 2.0).log10().ceil() as i32
 }
 
 /// Round a number to the given number of digits.
+///
+/// # Arguments
+///
+/// - `x`: The number to round.
+/// - `digits`: The number of digits to round to.
 fn round_to_digits(x: f64, digits: i32) -> f64 {
     (x * 10f64.powi(digits)).round() / 10f64.powi(digits)
 }

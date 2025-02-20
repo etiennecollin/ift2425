@@ -33,7 +33,7 @@ fn root_search() {
     // Bissection method
     // let f: FuncSingle = |x: f64| x.ln() - (-x).exp();
     // let interval = (1.0, 2.0);
-    // let _ = get_bissection_iterations(interval, X_TOLERANCE);
+    // let _ = get_bissection_iterations(interval, X_TOLERANCE).unwrap();
     // let _ = bissection(f, interval, X_TOLERANCE, F_X_TOLERANCE, ITERATIONS_MAX).unwrap();
 
     // Linear interpolation method
@@ -57,8 +57,8 @@ fn root_search() {
     // let x_initial = 1.5;
     // let interval = (1.0, 2.0);
     // let max_error = 1e-5;
-    // let _ = get_fixed_point_iterations_mvt(f, g, interval, max_error);
-    // let _ = get_fixed_point_x_tolerance_fit(f, g, interval, max_error);
+    // let _ = get_fixed_point_iterations_mvt(f, g, interval, max_error).unwrap();
+    // let _ = get_fixed_point_x_tolerance_fit(f, g, interval, max_error).unwrap();
     // let _ = fixed_point(g, x_initial, X_TOLERANCE, F_X_TOLERANCE, ITERATIONS_MAX).unwrap();
 }
 
@@ -71,28 +71,28 @@ fn linear_systems() {
     let b = dvector![0.0, -2.0, 3.0];
 
     // Other methods
-    // let x = solve_gauss(&a, &b, true);
-    // let x = solve_cramer(&a, &b);
+    // let _ = solve_gauss(&a, &b, true).unwrap();
+    // let _ = solve_cramer(&a, &b).unwrap();
 
     // Solve with lu unpacked
-    // let (l, u) = no_piv_lu(&a);
-    // let x = solve_lu(&l, &u, &b);
+    // let (l, u) = no_piv_lu(&a).unwrap();
+    // let _ = solve_lu(&l, &u, &b);
 
     // Solve with lu packed
-    // let lu = no_piv_lu_packed(&a);
+    // let lu = no_piv_lu_packed(&a).unwrap();
     // let (l, u) = lu_unpack(&lu);
-    // let x = solve_lu(&l, &u, &b);
+    // let _ = solve_lu(&l, &u, &b);
 
     // Solve with lu packed mutable
-    // no_piv_lu_mut(&mut a);
+    // let _ = no_piv_lu_packed_mut(&mut a).unwrap();
     // let (l, u) = lu_unpack(&a);
-    // let x = solve_lu(&l, &u, &b);
+    // let _ = solve_lu(&l, &u, &b);
 
     // LU with partial pivoting
-    // let x = partial_piv_lu(&a, &b);
+    // let _ = partial_piv_lu(&a, &b).unwrap();
 
     // LU with full pivoting
-    // let x = full_piv_lu(&a, &b);
+    // let _ = full_piv_lu(&a, &b).unwrap();
 
     // Least squares
     // let a = dmatrix![
@@ -101,7 +101,7 @@ fn linear_systems() {
     //     -3.0, 2.0;
     // ];
     // let b = dvector![4.0, -3.0, 3.0];
-    // let x = least_squares(&a, &b).unwrap();
+    // let _ = least_squares(&a, &b).unwrap();
 
     // Iterative solve
     // let a = dmatrix![
@@ -110,13 +110,13 @@ fn linear_systems() {
     // ];
     // let a_inv = a.clone().try_inverse().unwrap();
     // let b = dvector![6.0, 5.0];
-    // let x = iterative_solve(&a, &a_inv, &b, 1000).unwrap();
+    // let _ = iterative_solve(&a, &a_inv, &b, 1000);
     // println!("Solution: {}", x);
 
     // Iterative solvers
-    // let x = jacobi_solver(&a, &b, X_TOLERANCE, ITERATIONS_MAX);
-    // let x = gauss_seidel_solver(&a, &b, X_TOLERANCE, ITERATIONS_MAX);
-    // let x = relaxation_solver(&a, &b, 0.95, X_TOLERANCE, ITERATIONS_MAX);
+    // let _ = jacobi_solver(&a, &b, X_TOLERANCE, ITERATIONS_MAX).unwrap();
+    // let _ = gauss_seidel_solver(&a, &b, X_TOLERANCE, ITERATIONS_MAX).unwrap();
+    // let _ = relaxation_solver(&a, &b, 0.95, X_TOLERANCE, ITERATIONS_MAX).unwrap();
 }
 
 fn norms() {
@@ -160,28 +160,30 @@ fn non_linear_systems() {
     //     |p| p[0].powi(2) + p[1].powi(2) - 4.0,
     //     |p| p[0].exp() + p[1] - 1.0,
     // ];
-    //
+
     // Newton's method
-    // let x = newton_system(
+    // let _ = newton_system(
     //     &system,
     //     &x_initial,
     //     X_TOLERANCE,
     //     F_X_TOLERANCE,
     //     ITERATIONS_MAX,
-    // );
+    // )
+    // .unwrap();
 
     // #[rustfmt::skip]
     // let system: Vec<FuncMulti> = vec![
     //     |p| -(4.0 - p[1].powi(2)).sqrt(),
     //     |p| 1.0 - p[0].exp(),
     // ];
-    //
+
     // Fixed-point method
-    // let x = fixed_point_system(
+    // let _ = fixed_point_system(
     //     &system,
     //     &x_initial,
     //     X_TOLERANCE,
     //     F_X_TOLERANCE,
     //     ITERATIONS_MAX,
-    // );
+    // )
+    // .unwrap();
 }

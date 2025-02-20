@@ -37,7 +37,7 @@ pub fn compute_gradient(func: FuncMulti, point: &[f64]) -> Vec<f64> {
     gradient
 }
 
-/// Computes the gradient of an arbitrary function at a given point.
+/// Computes the derivative of an arbitrary function at a given point.
 pub fn compute_derivative(func: FuncSingle, x: f64) -> f64 {
     (func(x + EPSILON) - func(x - EPSILON)) / (2.0 * EPSILON)
 }
@@ -55,13 +55,13 @@ pub fn compute_derivative(func: FuncSingle, x: f64) -> f64 {
 //     sum / EPSILON.powi(n as i32)
 // }
 
-/// Computes the function value for the system of equations at a given point.
+/// Computes at a given point the value of every function in a system of equations.
 pub fn function_vec(system: &[FuncMulti], point: &[f64]) -> DVector<f64> {
     let data: Vec<_> = system.iter().map(|f| f(point)).collect();
     DVector::from_vec(data)
 }
 
-/// Computes the gradient of the system of equations at a given point.
+/// Computes at a given point the gradient of every function in a system of equations.
 pub fn gradient_mat(system: &[FuncMulti], point: &[f64]) -> DMatrix<f64> {
     let data: Vec<_> = system
         .iter()
@@ -101,6 +101,11 @@ impl From<TableError> for &'static str {
 /// # Returns
 ///
 /// - A string representing the formatted table.
+///
+/// # Errors
+///
+/// - If the length of the header and rows does not match.
+/// - If the table is empty.
 pub fn table_formatter<T>(
     info: Vec<String>,
     header: Vec<String>,
