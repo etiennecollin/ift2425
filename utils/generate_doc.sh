@@ -10,6 +10,7 @@ fi
 rm -rf ../docs
 mkdir -p ../docs
 cp -r ./target/doc/* ../docs
+rm -rf ../docs/src
 echo "<meta http-equiv=\"refresh\" content=\"0; url=utils/index.html\">" >../docs/index.html
 echo "ift2425.etiennecollin.com" >../docs/CNAME
 
