@@ -1,7 +1,5 @@
 #![allow(unused_variables, dead_code)]
 
-use std::f64::consts::PI;
-
 use nalgebra::{dmatrix, dvector};
 #[allow(unused_imports)]
 use utils::{cse::*, norms::*, root_search::*, systems::*, utils::*};
@@ -32,33 +30,33 @@ fn error_analysis() {
 }
 
 fn root_search() {
-    let func: FuncSingle = |x: f64| -3.0 - 3.0 * x + x.powi(2) + x.powi(3);
-    let interval = (PI / 3.0, PI / 2.0); // Only for bissection, linear interpolation and secant
-
     // Bissection method
-    // let iter = get_bissection_iterations(interval, 1e-4);
-    // let _ = bissection(func, interval, X_TOLERANCE, F_X_TOLERANCE, ITERATIONS_MAX).unwrap();
+    // let f: FuncSingle = |x: f64| x.ln() - (-x).exp();
+    // let interval = (1.0, 2.0);
+    // let _ = get_bissection_iterations(interval, X_TOLERANCE);
+    // let _ = bissection(f, interval, X_TOLERANCE, F_X_TOLERANCE, ITERATIONS_MAX).unwrap();
 
     // Linear interpolation method
     // let _ =
-    //     linear_interpolation(func, interval, X_TOLERANCE, F_X_TOLERANCE, ITERATIONS_MAX).unwrap();
+    //     linear_interpolation(f, interval, X_TOLERANCE, F_X_TOLERANCE, ITERATIONS_MAX).unwrap();
 
     // Secant method
-    // let _ = secant(func, interval, X_TOLERANCE, F_X_TOLERANCE, ITERATIONS_MAX).unwrap();
+    // let _ = secant(f, interval, X_TOLERANCE, F_X_TOLERANCE, ITERATIONS_MAX).unwrap();
 
     // Newton's method
     // To converge, |f'(x_initial)| > 0
-    // let x_initial = 2.0;
-    // let _ = newton(func, x_initial, X_TOLERANCE, F_X_TOLERANCE, ITERATIONS_MAX).unwrap();
+    // let x_initial = 1.5;
+    // let f: FuncSingle = |x: f64| x.ln() - (-x).exp();
+    // let _ = newton(f, x_initial, X_TOLERANCE, F_X_TOLERANCE, ITERATIONS_MAX).unwrap();
 
     // Fixed-point method
     // To converge, |g'(x_initial)| < 1
-    // let g: FuncSingle = |x: f64| x.ln().acos();
-    // let x_initial = 1.3;
-    let f: FuncSingle = |x: f64| x.exp() - x.recip();
-    let g: FuncSingle = |x: f64| (-x).exp();
-    let interval = (0.5, 1.0);
-    let max_error = 1e-2;
+    // let f: FuncSingle = |x: f64| x.ln() - (-x).exp();
+    // let g: FuncSingle = |x: f64| (-x).exp().exp();
+    // let g: FuncSingle = |x: f64| -x.ln().ln();
+    // let x_initial = 1.5;
+    // let interval = (1.0, 2.0);
+    // let max_error = 1e-5;
     // let _ = get_fixed_point_iterations_mvt(f, g, interval, max_error);
     // let _ = get_fixed_point_x_tolerance_fit(f, g, interval, max_error);
     // let _ = fixed_point(g, x_initial, X_TOLERANCE, F_X_TOLERANCE, ITERATIONS_MAX).unwrap();
