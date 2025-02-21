@@ -1,7 +1,7 @@
 [package]
 name = "ift2425"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 description = "A TUI interface used to run calculations as part of the IFT2425 course at Université de Montréal."
 authors = ["etiennecollin <collin.etienne.contact@gmail.com>"]
 categories = ["command-line-interface"]
@@ -11,12 +11,11 @@ license = "MIT"
 [dependencies]
 color-eyre = "0.6.3"
 crossterm = { version = "0.28.1", features = ["event-stream"] }
-tokio = { version = "1.42.0", features = ["rt-multi-thread", "macros"] }
+tokio = { version = "1.43.0", features = ["rt-multi-thread", "macros"] }
 tokio-stream = "0.1.17"
 ratatui = { version = "0.29.0" }
 tui-textarea = "0.7.0"
-strum = { version = "0.26.3", features = ["derive"] }
+strum = { version = "0.27.1", features = ["derive"] }
 evalexpr = "12.0.2"
-# evalexpr = "12.0.2"
 utils = { path = "../utils" }
 

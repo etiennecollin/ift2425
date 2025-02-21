@@ -8,7 +8,7 @@ use ratatui::{
     widgets::{Paragraph, Widget},
 };
 use tui_textarea::TextArea;
-use utils::newton::newton;
+use utils::root_search::newton;
 
 use super::theme::Theme;
 
@@ -124,7 +124,7 @@ impl NewtonModule {
             }
         };
 
-        self.result = newton(x, &array);
+        // self.result = newton(x, &array);
         Ok(())
     }
 
