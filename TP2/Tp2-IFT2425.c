@@ -11,6 +11,7 @@
 //------------------------------------------------
 // FICHIERS INCLUS -------------------------------
 //------------------------------------------------
+#include <cmath>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -651,13 +652,71 @@ void ConvertVelocityFieldInAroowField(float ***SeqImgOptFlot, float ***Vx,
 //--- Vos Fonctions Ici ---//
 //-------------------------//
 
-double calculate_Ix(**float Ix, int rows, int columns, float **I) {
-  for (int i = 0; i < rows; i++) {
-    for (int j = 0; j < columns; j++) {
-      Ix = I[][]
+// TODO : might cause an out of bounds error
+// TODO : assume no variation in qty that we dont have values
+void calculate_Ix(float **Ix, float **img1, float **img2, int length,
+                  int width) {
+  for (int i = 0; i < length; i++) {
+    for (int j = 0; j < width; j++) {
+      Ix[i][j] =
+          (img1[i][j + 1] - img1[i][j] + img1[i + 1][j + 1] - img1[i + 1][j] +
+           img2[i][j + 1] - img2[i][j] + img2[i + 1][j + 1] - img2[i + 1][j]) /
+          4.0;
     }
   }
 }
+
+void calculate_Iy(float **Iy, float **img1, float **img2, int length,
+                  int width) {
+  for (int i = 0; i < length; i++) {
+    for (int j = 0; j < width; j++) {
+      Iy[i][j] =
+          (img1[i + 1][j] - img1[i][j] + img1[i + 1][j + 1] - img1[i][j + 1] +
+           img2[i + 1][j] - img2[i][j] + img2[i + 1][j + 1] - img2[i][j + 1]) /
+          4.0;
+    }
+  }
+}
+
+void calculate_It(float **It, float **img1, float **img2, int length,
+                  int width) {
+  for (int i = 0; i < length; i++) {
+    for (int j = 0; j < width; j++) {
+      It[i][j] = (img2[i][j] - img1[i][j] + img2[i + 1][j] - img1[i + 1][j] +
+                  img2[i][j + 1] - img1[i][j + 1] + img2[i + 1][j + 1] -
+                  img1[i + 1][j + 1]) /
+                 4.0;
+    }
+  }
+}
+
+// i and j specifies the pixel
+double calculate_next_vxM(float **vxM, float **OptFl_Vx, int i, int j) {
+  return (OptFl_Vx[i - 1][j] + OptFl_Vx[i + 1][j] + OptFl_Vx[i][j + 1] +
+          OptFl_Vx[i][j - 1]) /
+             6.0 +
+         (OptFl_Vx[i - 1][j - 1] + OptFl_Vx[i - 1][j + 1] +
+          OptFl_Vx[i + 1][j + 1] + OptFl_Vx[i + 1][j - 1]) /
+             12.0;
+}
+
+// TODO: verify that this is the correct formula
+double calculate_next_vyM(float **vyM, float **OptFl_Vy, int i, int j) {
+  return (OptFl_Vy[i - 1][j] + OptFl_Vy[i + 1][j] + OptFl_Vy[i][j + 1] +
+          OptFl_Vy[i][j - 1]) /
+             6.0 +
+         (OptFl_Vy[i - 1][j - 1] + OptFl_Vy[i - 1][j + 1] +
+          OptFl_Vy[i + 1][j + 1] + OptFl_Vy[i + 1][j - 1]) /
+             12.0;
+}
+
+double calculate_next_vx(double vxM, double vyM, double Ix, double Iy,
+                         double It, double alpha) {
+  return vxM - Ix * (Ix * vxM + Iy * vyM + It) /
+                   ((pow(alpha, 2)) + pow(Ix, 2) + pow(Iy, 2));
+}
+
+void jacobi_next_iteration() {}
 
 //----------------------------------------------------------
 //----------------------------------------------------------
@@ -750,7 +809,17 @@ int main(int argc, char **argv) {
   //-----------------------------------------------------------
   printf("\n\n Jacobi Iterations :\n");
 
-  // Programmer ici ........
+  calculate_Ix(
+      Ix, Img1, Img2, length,
+      width); // TODO : make sure the length and width parameters are okay
+  calculate_Iy(
+      Iy, Img1, Img2, length,
+      width); // TODO : make sure the length and width parameters are okay
+  calculate_It(
+      It, Img1, Img2, length,
+      width); // TODO : make sure the length and width parameters are okay
+
+  // TODO
 
   // Convert {OptFl_Vx[i][j],OptFl_Vy[i][j]} -> {Array Of Vector}
   ConvertVelocityFieldInAroowField(SeqImgOptFlot, OptFl_Vx, OptFl_Vy, length,
