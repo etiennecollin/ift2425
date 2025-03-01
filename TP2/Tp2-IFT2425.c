@@ -716,7 +716,26 @@ double calculate_next_vx(double vxM, double vyM, double Ix, double Iy,
                    ((pow(alpha, 2)) + pow(Ix, 2) + pow(Iy, 2));
 }
 
-void jacobi_next_iteration() {}
+double calculate_next_vy(double vxM, double vyM, double Ix, double Iy,
+                         double It, double alpha) {
+  return vyM - Iy * (Ix * vxM + Iy * vyM + It) /
+                   ((pow(alpha, 2)) + pow(Ix, 2) + pow(Iy, 2));
+}
+
+void jacobi_next_iteration(float **vxM, float **OptFl_Vx, float **vyM,
+                           float **OptFl_Vy, float **Ix, float **Iy, float **It,
+                           int length, int width, float alpha) {
+  for (int i = 0; i < length; i++) {
+    for (int j = 0; j < width; j++) {
+      OptFl_Vx[i][j] = calculate_next_vx(vxM[i][j], vyM[i][j], Ix[i][j],
+                                         Iy[i][j], It[i][j], alpha);
+      OptFl_Vy[i][j] = calculate_next_vy(vxM[i][j], vyM[i][j], Ix[i][j],
+                                         Iy[i][j], It[i][j], alpha);
+      calculate_next_vxM(vxM, OptFl_Vx, i, j);
+      calculate_next_vyM(vyM, OptFl_Vy, i, j);
+    }
+  }
+}
 
 //----------------------------------------------------------
 //----------------------------------------------------------
@@ -819,7 +838,8 @@ int main(int argc, char **argv) {
       It, Img1, Img2, length,
       width); // TODO : make sure the length and width parameters are okay
 
-  // TODO
+  jacobi_next_iteration(VxM, OptFl_Vx, VyM, OptFl_Vy, Ix, Iy, It, length, width,
+                        alpha);
 
   // Convert {OptFl_Vx[i][j],OptFl_Vy[i][j]} -> {Array Of Vector}
   ConvertVelocityFieldInAroowField(SeqImgOptFlot, OptFl_Vx, OptFl_Vy, length,
