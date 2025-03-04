@@ -587,10 +587,11 @@ void PutArrowOnImg(float **Img, int lgth, int wdth, int PosX, int PosY, float In
     double LgthArrow = sqrt((IncPosX_ * IncPosX_) + (IncPosY_ * IncPosY_));
     double Sz = LgthArrow / 2.0;
 
-    if (IncPosX == 0)
+    if (IncPosX == 0) {
         Theta = PI / 2;
-    else
+    } else {
         Theta = atan2(IncPosY, IncPosX);
+    }
 
     NxtPosX = PosX + (IncPosX_);
     NxtPosY = PosY + (IncPosY_);
@@ -638,58 +639,54 @@ void ConvertVelocityFieldInArrowField(float ***SeqImgOptFlot, float ***Vx, float
 //--- Vos Fonctions Ici ---//
 //-------------------------//
 
-void calculate_Ix(float **Ix, float **img1, float **img2, int length, int width) {
-    for (int i = 0; i < length; i++) {
-        for (int j = 0; j < width; j++) {
-            int i_max = std::min(i + 1, length - 1);
-            int j_max = std::min(j + 1, width - 1);
-            Ix[i][j] = (img1[i][j_max] - img1[i][j] + img1[i_max][j_max] - img1[i_max][j] + img2[i][j_max] -
-                        img2[i][j] + img2[i_max][j_max] - img2[i_max][j]) /
-                       4.0;
+void calculate_I(float **Ix, float **Iy, float **It, float **img1, float **img2, int length, int width) {
+    float denominator = 1.0 / 4.0;
+
+    // Ignore first and last row and column to avoid out of bounds
+    for (int i = 1; i < length - 1; i++) {
+        for (int j = 1; j < width - 1; j++) {
+            Ix[i][j] = (img1[i][j + 1] - img1[i][j] + img1[i + 1][j + 1] - img1[i + 1][j] + img2[i][j + 1] -
+                        img2[i][j] + img2[i + 1][j + 1] - img2[i + 1][j]) *
+                       denominator;
+            Iy[i][j] = (img1[i + 1][j] - img1[i][j] + img1[i + 1][j + 1] - img1[i][j + 1] + img2[i + 1][j] -
+                        img2[i][j] + img2[i + 1][j + 1] - img2[i][j + 1]) *
+                       denominator;
+            It[i][j] = (img2[i][j] - img1[i][j] + img2[i + 1][j] - img1[i + 1][j] + img2[i][j + 1] - img1[i][j + 1] +
+                        img2[i + 1][j + 1] - img1[i + 1][j + 1]) *
+                       denominator;
         }
     }
 }
 
-void calculate_Iy(float **Iy, float **img1, float **img2, int length, int width) {
-    for (int i = 0; i < length; i++) {
-        for (int j = 0; j < width; j++) {
-            int i_max = std::min(i + 1, length - 1);
-            int j_max = std::min(j + 1, width - 1);
-            Iy[i][j] = (img1[i_max][j] - img1[i][j] + img1[i_max][j_max] - img1[i][j_max] + img2[i_max][j] -
-                        img2[i][j] + img2[i_max][j_max] - img2[i][j_max]) /
-                       4.0;
+float calculate_average_flow(float **matrix, int i, int j) {
+    return (matrix[i - 1][j] + matrix[i + 1][j] + matrix[i][j + 1] + matrix[i][j - 1]) / 6.0 +
+           (matrix[i - 1][j - 1] + matrix[i - 1][j + 1] + matrix[i + 1][j + 1] + matrix[i + 1][j - 1]) / 12.0;
+}
+
+float calculate_flow_constant(float vxM, float vyM, float Ix, float Iy, float It, float alpha) {
+    return (Ix * vxM + Iy * vyM + It) / ((pow(alpha, 2)) + pow(Ix, 2) + pow(Iy, 2));
+}
+
+void compute_flow(float ***OptFl_Vx, float ***OptFl_Vy, float **VxM, float **VyM, float **Ix, float **Iy, float **It,
+                  float alpha, int length, int width, int n_iter) {
+    // Jacobi Iterations
+    for (int k = 0; k < n_iter - 1; k++) {
+        // Ignore first and last row and column to avoid out of bounds
+        for (int i = 1; i < length - 1; i++) {
+            for (int j = 1; j < width - 1; j++) {
+                // Compute the VxM and VyM of the current iteration
+                VxM[i][j] = calculate_average_flow(OptFl_Vx[k], i, j);
+                VyM[i][j] = calculate_average_flow(OptFl_Vy[k], i, j);
+
+                // Compute the constant part of the flow equation once
+                float constant = calculate_flow_constant(VxM[i][j], VyM[i][j], Ix[i][j], Iy[i][j], It[i][j], alpha);
+
+                // Compute the next Vx and Vy
+                OptFl_Vx[k + 1][i][j] = VxM[i][j] - Ix[i][j] * constant;
+                OptFl_Vy[k + 1][i][j] = VyM[i][j] - Iy[i][j] * constant;
+            }
         }
     }
-}
-
-void calculate_It(float **It, float **img1, float **img2, int length, int width) {
-    for (int i = 0; i < length; i++) {
-        for (int j = 0; j < width; j++) {
-            int i_max = std::min(i + 1, length - 1);
-            int j_max = std::min(j + 1, width - 1);
-            It[i][j] = (img2[i][j] - img1[i][j] + img2[i_max][j] - img1[i_max][j] + img2[i][j_max] - img1[i][j_max] +
-                        img2[i_max][j_max] - img1[i_max][j_max]) /
-                       4.0;
-        }
-    }
-}
-
-double calculate_next_vxM(float **vxM, float **OptFl_Vx, int i, int j, int i_min, int i_max, int j_min, int j_max) {
-    return (OptFl_Vx[i_min][j] + OptFl_Vx[i_max][j] + OptFl_Vx[i][j_max] + OptFl_Vx[i][j_min]) / 6.0 +
-           (OptFl_Vx[i_min][j_min] + OptFl_Vx[i_min][j_max] + OptFl_Vx[i_max][j_max] + OptFl_Vx[i_max][j_min]) / 12.0;
-}
-
-double calculate_next_vyM(float **vyM, float **OptFl_Vy, int i, int j, int i_min, int i_max, int j_min, int j_max) {
-    return (OptFl_Vy[i_min][j] + OptFl_Vy[i_max][j] + OptFl_Vy[i][j_max] + OptFl_Vy[i][j_min]) / 6.0 +
-           (OptFl_Vy[i_min][j_min] + OptFl_Vy[i_min][j_max] + OptFl_Vy[i_max][j_max] + OptFl_Vy[i_max][j_min]) / 12.0;
-}
-
-double calculate_next_vx(double vxM, double vyM, double Ix, double Iy, double It, double alpha) {
-    return vxM - Ix * (Ix * vxM + Iy * vyM + It) / ((pow(alpha, 2)) + pow(Ix, 2) + pow(Iy, 2));
-}
-
-double calculate_next_vy(double vxM, double vyM, double Ix, double Iy, double It, double alpha) {
-    return vyM - Iy * (Ix * vxM + Iy * vyM + It) / ((pow(alpha, 2)) + pow(Ix, 2) + pow(Iy, 2));
 }
 
 //----------------------------------------------------------
@@ -771,32 +768,8 @@ int main(int argc, char **argv) {
     //
     //-----------------------------------------------------------
     printf("\n\n Jacobi Iterations :\n");
-
-    // Calcul des intensités
-    calculate_Ix(Ix, Img1, Img2, length, width);
-    calculate_Iy(Iy, Img1, Img2, length, width);
-    calculate_It(It, Img1, Img2, length, width);
-
-    // Commencer à 1 puisque 0 est déjà initialisé à 0
-    for (int k = 1; i < NBITER; i++) {
-        for (int i = 0; i < length; i++) {
-            for (int j = 0; j < width; j++) {
-                // Make sure we don't go out of bounds
-                int i_min = std::max(i - 1, 0);
-                int i_max = std::min(i + 1, length - 1);
-                int j_min = std::max(j - 1, 0);
-                int j_max = std::min(j + 1, width - 1);
-
-                // Compute the VxM and VyM of the previous iteration
-                VxM[i][j] = calculate_next_vxM(VxM, OptFl_Vx[k - 1], i, j, i_min, i_max, j_min, j_max);
-                VyM[i][j] = calculate_next_vyM(VyM, OptFl_Vy[k - 1], i, j, i_min, i_max, j_min, j_max);
-
-                // Compute the current Vx and Vy
-                OptFl_Vx[k][i][j] = calculate_next_vx(VxM[i][j], VyM[i][j], Ix[i][j], Iy[i][j], It[i][j], alpha);
-                OptFl_Vy[k][i][j] = calculate_next_vy(VxM[i][j], VyM[i][j], Ix[i][j], Iy[i][j], It[i][j], alpha);
-            }
-        }
-    }
+    calculate_I(Ix, Iy, It, Img1, Img2, length, width);
+    compute_flow(OptFl_Vx, OptFl_Vy, VxM, VyM, Ix, Iy, It, alpha, length, width, NBITER);
 
     // Convert {OptFl_Vx[i][j],OptFl_Vy[i][j]} -> {Array Of Vector}
     ConvertVelocityFieldInArrowField(SeqImgOptFlot, OptFl_Vx, OptFl_Vy, length, width, NBITER, 7);
@@ -826,10 +799,11 @@ int main(int argc, char **argv) {
     for (k = 0; k < NBITER; k++) {
         printf("\r [%d/1000]", k);
         fflush(stdout);
-        if ((k / 10) % 2)
+        if ((k / 10) % 2) {
             x_ppicture1 = cree_Ximage(Img1, zoom, length, width);
-        else
+        } else {
             x_ppicture1 = cree_Ximage(Img2, zoom, length, width);
+        }
         x_ppicture2 = cree_Ximage(SeqImgOptFlot[k], zoom, length, width);
         x_ppicture3 = cree_XimageWithMvt(Img2, SeqImgOptFlot[k], zoom, length, width);
 
@@ -838,9 +812,7 @@ int main(int argc, char **argv) {
         XPutImage(display, win_ppicture3, gc, x_ppicture3, 0, 0, 0, 0, x_ppicture3->width, x_ppicture3->height);
 
         usleep(10);  // si votre machine est lente mettre un nombre moins grand
-        if (k == (NBITER - 1))
-            ;
-        {
+        if (k == (NBITER - 1)) {
             XDestroyImage(x_ppicture1);
             XDestroyImage(x_ppicture2);
             XDestroyImage(x_ppicture3);
