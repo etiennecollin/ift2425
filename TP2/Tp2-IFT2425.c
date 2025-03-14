@@ -747,7 +747,7 @@ int main(int argc, char **argv) {
     VxM = fmatrix_allocate_2d(length, width);  // M stands for average
     VyM = fmatrix_allocate_2d(length, width);  // M stands for average
 
-    // Init
+    // Init matrices
     for (k = 0; k < NBITER; k++) {
         for (i = 0; i < length; i++) {
             for (j = 0; j < width; j++) {
@@ -768,10 +768,12 @@ int main(int argc, char **argv) {
     //
     //-----------------------------------------------------------
     printf("\n\n Jacobi Iterations :\n");
+    // Initialize the Ix, Iy, It matrices
     calculate_I(Ix, Iy, It, Img1, Img2, length, width);
+    // Compute the flow
     compute_flow(OptFl_Vx, OptFl_Vy, VxM, VyM, Ix, Iy, It, alpha, length, width, NBITER);
 
-    // Convert {OptFl_Vx[i][j],OptFl_Vy[i][j]} -> {Array Of Vector}
+    // Convertir le flot optique en image
     ConvertVelocityFieldInArrowField(SeqImgOptFlot, OptFl_Vx, OptFl_Vy, length, width, NBITER, 7);
 
     // Sauvegarde
