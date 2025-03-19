@@ -50,7 +50,7 @@ int open_display() {
 
 /************************************************************************/
 /* FABRIQUE_WINDOW()                                                    */
-/* Cette fonction crée une fenetre X et l'affiche à l'écran.            */
+/* Cette fonction crÃ©e une fenetre X et l'affiche Ã  l'Ã©cran.            */
 /************************************************************************/
 Window fabrique_window(char* nom_fen, int x, int y, int width, int height, int zoom) {
     Window win;
@@ -98,7 +98,7 @@ Window fabrique_window(char* nom_fen, int x, int y, int width, int height, int z
 
 /****************************************************************************/
 /* CREE_XIMAGE()                                                            */
-/* Crée une XImage à partir d'un tableau de float                           */
+/* CrÃ©e une XImage Ã  partir d'un tableau de float                           */
 /* L'image peut subir un zoom.                                              */
 /****************************************************************************/
 XImage* cree_Ximage(float** mat, int z, int length, int width) {
