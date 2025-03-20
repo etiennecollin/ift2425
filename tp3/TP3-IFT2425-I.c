@@ -247,12 +247,17 @@ void SaveImagePgm(char* bruit, char* name, float** mat, int lgth, int wdth) {
 //---- Fonction Pour TP ---//
 //-------------------------//
 
+///////////////////////////////////////////////////////////////////////////////
+// Question 1.1
+///////////////////////////////////////////////////////////////////////////////
+
 // Function to integrate
 float f(float x) {
     return 4 * sqrt(1 - pow(x, 2));
 }
 
-// Uses the trapezoidal rule for integration
+// Uses the trapezoidal rule for integration.
+// Uses naive summation.
 float calculateIntegral( float a, float b, int NBINTERV) {
     
     float h = (b - a) / NBINTERV;
@@ -270,6 +275,37 @@ float calculateIntegral( float a, float b, int NBINTERV) {
     return integral;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Question 1.2
+///////////////////////////////////////////////////////////////////////////////
+
+// Determines the integral on each subinterval and puts each value in an array
+float* calculate_array_subintegrals(float a, float b, int NBINTERV) {
+
+    float *array = new float[NBINTERV];
+    float h = (b - a) / NBINTERV;
+    float xi = a + h;
+    float xi_prev = a;
+
+    for (int i = 0; i < NBINTERV; i++) {
+        array[i] = h / 2 * (f(xi) + f(xi_prev));
+        xi_prev = xi;
+        xi += h;
+    }
+
+    return array;
+}
+
+float pairwise_sum(float* array, int left, int right) {
+    // Base case
+    if (left == right) return array[left];
+
+    // Recursive case 
+    int middle = left  + (right - left) / 2;
+    float left_sum = pairwise_sum(array, left, middle);
+    float right_sum = pairwise_sum(array, middle + 1, right);
+    return left_sum + right_sum;
+}
 
 //----------------------------------------------------------
 //----------------------------------------------------------
@@ -318,50 +354,15 @@ int main(int argc, char** argv) {
     }
     float* VctPts = fmatrix_allocate_1d(NbInt + 1);
 
-    float integral = calculateIntegral(0, 1, NBINTERV);
+    
+    // Question 1.1
+    float a = 0;
+    float b = 1;
+    float integral = calculateIntegral(a, b, NBINTERV); 
 
-
-    // End
-
-    //--------------------------------------------------------------------------------
-    //---------------- visu sous XWINDOW ---------------------------------------------
-    //--------------------------------------------------------------------------------
-    /* if (flag_graph) {
-        // ouverture session graphique
-        if (open_display() < 0) {
-            printf(" Impossible d'ouvrir une session graphique");
-        }
-        sprintf(nomfen_ppicture, "Graphe : ", "");
-        win_ppicture = fabrique_window(nomfen_ppicture, 10, 10, width, length, zoom);
-        x_ppicture = cree_Ximage(Graph2D, zoom, length, width);
-
-        // Sauvegarde
-        // SaveImagePgm((char*)"",(char*)"Graphe",Graph2D,length,width); //Pour sauvegarder l'image
-        printf("\n\n Pour quitter,appuyer sur la barre d'espace");
-        fflush(stdout);
-
-        // boucle d'evenements
-        while (true) {
-            XNextEvent(display, &ev);
-            switch (ev.type) {
-                case Expose:
-                    XPutImage(display, win_ppicture, gc, x_ppicture, 0, 0, 0, 0, x_ppicture->width, x_ppicture->height);
-                    break;
-                case KeyPress:
-                    XDestroyImage(x_ppicture);
-                    XFreeGC(display, gc);
-                    XCloseDisplay(display);
-                    flag_graph = 0;
-                    break;
-            }
-
-            if (!flag_graph) {
-                break;
-            }
-        }
-    }
-
-    // retour sans probleme
-    printf("\n Fini... \n\n\n");
-    return 0; */
+    // Question 1.2
+    float* array = calculate_array_subintegrals(a, b, NBINTERV);
+    integral = pairwise_sum(array, 0, NBINTERV - 1);
+    
+    return 0; 
 }
