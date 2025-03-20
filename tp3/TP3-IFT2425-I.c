@@ -247,6 +247,30 @@ void SaveImagePgm(char* bruit, char* name, float** mat, int lgth, int wdth) {
 //---- Fonction Pour TP ---//
 //-------------------------//
 
+// Function to integrate
+float f(float x) {
+    return 4 * sqrt(1 - pow(x, 2));
+}
+
+// Uses the trapezoidal rule for integration
+float calculateIntegral( float a, float b, int NBINTERV) {
+    
+    float h = (b - a) / NBINTERV;
+    float integral = 0; 
+
+    float xi = a + h; 
+    float xi_prev = a; 
+
+    for (int i = 1 ; i <= NBINTERV; i++) {
+        integral += h / 2 * (f(xi) + f(xi_prev));
+        xi_prev = xi;
+        xi += h;
+    }
+    
+    return integral;
+}
+
+
 //----------------------------------------------------------
 //----------------------------------------------------------
 // PROGRAMME PRINCIPAL -------------------------------------
@@ -294,14 +318,15 @@ int main(int argc, char** argv) {
     }
     float* VctPts = fmatrix_allocate_1d(NbInt + 1);
 
-    // Programmer ici
+    float integral = calculateIntegral(0, 1, NBINTERV);
+
 
     // End
 
     //--------------------------------------------------------------------------------
     //---------------- visu sous XWINDOW ---------------------------------------------
     //--------------------------------------------------------------------------------
-    if (flag_graph) {
+    /* if (flag_graph) {
         // ouverture session graphique
         if (open_display() < 0) {
             printf(" Impossible d'ouvrir une session graphique");
@@ -338,5 +363,5 @@ int main(int argc, char** argv) {
 
     // retour sans probleme
     printf("\n Fini... \n\n\n");
-    return 0;
+    return 0; */
 }
