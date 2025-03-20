@@ -10,6 +10,7 @@
 //------------------------------------------------
 // FICHIERS INCLUS
 //------------------------------------------------
+#include <cstddef>
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -307,6 +308,25 @@ float pairwise_sum(float* array, int left, int right) {
     return left_sum + right_sum;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Question 1.3
+///////////////////////////////////////////////////////////////////////////////
+
+float kahan_sum(float* array, size_t n) { // n is the length of the array
+   
+    float e = 0; // Rounding error
+    float s = 0; // Summation
+
+    for (int i = 0; i < n; i ++) {
+        float temp = s;
+        float y = array[i] + e;
+        s = temp + y;
+        e = (temp - s) + y;
+    }
+
+    return s;
+}
+
 //----------------------------------------------------------
 //----------------------------------------------------------
 // PROGRAMME PRINCIPAL -------------------------------------
@@ -363,6 +383,9 @@ int main(int argc, char** argv) {
     // Question 1.2
     float* array = calculate_array_subintegrals(a, b, NBINTERV);
     integral = pairwise_sum(array, 0, NBINTERV - 1);
+
+    // Question 1.3
+    integral = kahan_sum(array, NBINTERV);
     
     return 0; 
 }
