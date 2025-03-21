@@ -247,6 +247,54 @@ void SaveImagePgm(char* bruit, char* name, float** mat, int lgth, int wdth) {
 //---- Fonction Pour TP ---//
 //-------------------------//
 
+// Determines the pixel (i, j) associated to some mu and x
+int* determine_pixel(float mu, float x, int length, int width) {
+
+    // Determine i
+    float step = (4 - 2.5) / length;
+    int i = (mu - 2.5) / step;
+
+    // Determine j
+    int j = (int) (width - 1) * x; // Floors the value
+
+    static int pixel[2];
+    pixel[0] = i;
+    pixel[1] = j;
+    return pixel;
+}
+
+
+
+float *color_limit_set(float mu, float **Graph2D, int length, int width) {
+
+    int N1 = 10000;
+    int N2 = 20000;
+
+    float x_prev = 0.5; 
+    float x = 0.5;
+
+    // First 10000 iterations of the sequence
+    for (int k = 1; k <= N1 ; k++) {
+        x = mu * x_prev * (1 - x_prev);
+        x_prev = x;
+    }
+
+    // Iterations 10001 to 20000 of the sequence
+    for (int k = N1 + 1 ; k <= N2; k++) {
+        x = mu * x_prev * (1 - x_prev);
+
+        // Determine the pixel
+        int* pixel = determine_pixel(mu, x, length, width);
+        int i = pixel[0]; int j = pixel[1];
+
+        Graph2D[i][j] = 0; // Pixel colored in black
+        
+        x_prev = x;
+    }
+
+
+}
+
 //----------------------------------------------------------
 //----------------------------------------------------------
 // PROGRAMME PRINCIPAL -------------------------------------
@@ -294,9 +342,21 @@ int main(int argc, char** argv) {
     }
     float* VctPts = fmatrix_allocate_1d(NbInt + 1);
 
-    // Programmer ici
+    
+    // Code (Justin) 
+    // Question 3 (Logistic sequence)
+    float mu_upperbound = 4;
+    float mu_lowerbound = 2.5;
+    float step = (mu_upperbound - mu_lowerbound) / length; // TODO : À vérifier
+    float mu = mu_lowerbound;
 
-    // End
+    for (int i = 0; i < length; i++) {
+        color_limit_set(mu, Graph2D);
+        mu += step;
+    }
+
+
+
 
     //--------------------------------------------------------------------------------
     //---------------- visu sous XWINDOW ---------------------------------------------
