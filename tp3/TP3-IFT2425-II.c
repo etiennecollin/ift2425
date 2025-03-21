@@ -264,35 +264,56 @@ int* determine_pixel(float mu, float x, int length, int width) {
 }
 
 
-
-float *color_limit_set(float mu, float **Graph2D, int length, int width) {
+void color_limit_set(float mu, float **Graph2D, int length, int width) {
 
     int N1 = 10000;
     int N2 = 20000;
 
-    float x_prev = 0.5; 
     float x = 0.5;
 
     // First 10000 iterations of the sequence
     for (int k = 1; k <= N1 ; k++) {
-        x = mu * x_prev * (1 - x_prev);
-        x_prev = x;
+        x = mu * x * (1 - x);
     }
 
     // Iterations 10001 to 20000 of the sequence
     for (int k = N1 + 1 ; k <= N2; k++) {
-        x = mu * x_prev * (1 - x_prev);
+        x = mu * x * (1 - x);
 
         // Determine the pixel
         int* pixel = determine_pixel(mu, x, length, width);
         int i = pixel[0]; int j = pixel[1];
 
         Graph2D[i][j] = 0; // Pixel colored in black
-        
-        x_prev = x;
+    }
+}
+
+// Question 4 
+float calculate_x_float(float mu, float x0) {
+
+    int N = pow(10, 7);
+    float x = x0;
+
+    int sum = 0;
+    for (int i = 0; i < N; i++) {
+        x = mu * x * (1 - x);
+        sum += sqrt(x); // TODO: naive sum; maybe change the way we sum
     }
 
+    return 2.0 * N / sum;
+}
 
+double calculate_x_double(float mu, float x0) {
+    int N = pow(10, 7);
+    double x = x0;
+
+    int sum = 0;
+    for (int i = 0; i < N; i++) {
+        x = mu * x * (1 - x);
+        sum += sqrt(x); // TODO: naive sum; maybe change the way we sum
+    }
+
+    return 2.0 * N / sum;
 }
 
 //----------------------------------------------------------
@@ -351,12 +372,22 @@ int main(int argc, char** argv) {
     float mu = mu_lowerbound;
 
     for (int i = 0; i < length; i++) {
-        color_limit_set(mu, Graph2D);
+        color_limit_set(mu, Graph2D, length, width);
         mu += step;
     }
 
+    // Question 4 (pi approximation)
+    
+    // With floats
+    float x;
+    x = calculate_x_float(mu, 0.2);
+    x = calculate_x_float(mu, 0.4);
+    x = calculate_x_float(mu, 0.6);
 
-
+    // With doubles
+    x = calculate_x_double(mu, 0.2);
+    x = calculate_x_double(mu, 0.4);
+    x = calculate_x_double(mu, 0.6);
 
     //--------------------------------------------------------------------------------
     //---------------- visu sous XWINDOW ---------------------------------------------
