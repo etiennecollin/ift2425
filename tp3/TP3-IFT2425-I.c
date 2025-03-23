@@ -10,7 +10,6 @@
 //------------------------------------------------
 // FICHIERS INCLUS
 //------------------------------------------------
-#include <cstddef>
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -18,231 +17,9 @@
 #include <string.h>
 #include <time.h>
 
+#include <cstddef>
 #include <iostream>
 #include <new>
-
-//-------------------------
-// Windows
-//-------------------------
-#include <X11/Xutil.h>
-
-Display* display;
-int screen_num;
-int depth;
-Window root;
-Visual* visual;
-GC gc;
-
-/************************************************************************/
-/* OPEN_DISPLAY()                                                       */
-/************************************************************************/
-int open_display() {
-    if ((display = XOpenDisplay(NULL)) == NULL) {
-        printf("Connection impossible\n");
-        return (-1);
-    } else {
-        screen_num = DefaultScreen(display);
-        visual = DefaultVisual(display, screen_num);
-        depth = DefaultDepth(display, screen_num);
-        root = RootWindow(display, screen_num);
-        return 0;
-    }
-}
-
-/************************************************************************/
-/* FABRIQUE_WINDOW()                                                    */
-/* Cette fonction crée une fenetre X et l'affiche à l'écran.            */
-/************************************************************************/
-Window fabrique_window(char* nom_fen, int x, int y, int width, int height, int zoom) {
-    Window win;
-    XSizeHints size_hints;
-    XWMHints wm_hints;
-    XClassHint class_hints;
-    XTextProperty windowName, iconName;
-
-    char* name = nom_fen;
-
-    if (zoom < 0) {
-        width /= -zoom;
-        height /= -zoom;
-    }
-    if (zoom > 0) {
-        width *= zoom;
-        height *= zoom;
-    }
-
-    win = XCreateSimpleWindow(display, root, x, y, width, height, 1, 0, 255);
-
-    size_hints.flags = PPosition | PSize | PMinSize;
-    size_hints.min_width = width;
-    size_hints.min_height = height;
-
-    XStringListToTextProperty(&name, 1, &windowName);
-    XStringListToTextProperty(&name, 1, &iconName);
-    wm_hints.initial_state = NormalState;
-    wm_hints.input = True;
-    wm_hints.flags = StateHint | InputHint;
-    class_hints.res_name = nom_fen;
-    class_hints.res_class = nom_fen;
-
-    XSetWMProperties(display, win, &windowName, &iconName, NULL, 0, &size_hints, &wm_hints, &class_hints);
-
-    gc = XCreateGC(display, win, 0, NULL);
-
-    XSelectInput(display, win,
-                 ExposureMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask | ButtonMotionMask |
-                     PointerMotionHintMask | StructureNotifyMask);
-
-    XMapWindow(display, win);
-    return (win);
-}
-
-/****************************************************************************/
-/* CREE_XIMAGE()                                                            */
-/* Crée une XImage à partir d'un tableau de float                           */
-/* L'image peut subir un zoom.                                              */
-/****************************************************************************/
-XImage* cree_Ximage(float** mat, int z, int length, int width) {
-    int lgth, wdth, lig, col, zoom_col, zoom_lig;
-    float somme;
-    unsigned char pix;
-    unsigned char* dat;
-    XImage* imageX;
-
-    // Zoom positif ou negatif
-    if (z > 0) {
-        lgth = length * z;
-        wdth = width * z;
-
-        dat = (unsigned char*)malloc(lgth * (wdth * 4) * sizeof(unsigned char));
-        if (dat == NULL) {
-            printf("Impossible d'allouer de la memoire.");
-            exit(-1);
-        }
-
-        for (lig = 0; lig < lgth; lig = lig + z) {
-            for (col = 0; col < wdth; col = col + z) {
-                pix = (unsigned char)mat[lig / z][col / z];
-                for (zoom_lig = 0; zoom_lig < z; zoom_lig++) {
-                    for (zoom_col = 0; zoom_col < z; zoom_col++) {
-                        dat[((lig + zoom_lig) * wdth * 4) + ((4 * (col + zoom_col)) + 0)] = pix;
-                        dat[((lig + zoom_lig) * wdth * 4) + ((4 * (col + zoom_col)) + 1)] = pix;
-                        dat[((lig + zoom_lig) * wdth * 4) + ((4 * (col + zoom_col)) + 2)] = pix;
-                        dat[((lig + zoom_lig) * wdth * 4) + ((4 * (col + zoom_col)) + 3)] = pix;
-                    }
-                }
-            }
-        }
-    } else {
-        z = -z;
-        lgth = (length / z);
-        wdth = (width / z);
-
-        dat = (unsigned char*)malloc(lgth * (wdth * 4) * sizeof(unsigned char));
-        if (dat == NULL) {
-            printf("Impossible d'allouer de la memoire.");
-            exit(-1);
-        }
-
-        for (lig = 0; lig < (lgth * z); lig = lig + z) {
-            for (col = 0; col < (wdth * z); col = col + z) {
-                somme = 0.0;
-                for (zoom_lig = 0; zoom_lig < z; zoom_lig++) {
-                    for (zoom_col = 0; zoom_col < z; zoom_col++) {
-                        somme += mat[lig + zoom_lig][col + zoom_col];
-                    }
-                }
-
-                somme /= (z * z);
-                dat[((lig / z) * wdth * 4) + ((4 * (col / z)) + 0)] = (unsigned char)somme;
-                dat[((lig / z) * wdth * 4) + ((4 * (col / z)) + 1)] = (unsigned char)somme;
-                dat[((lig / z) * wdth * 4) + ((4 * (col / z)) + 2)] = (unsigned char)somme;
-                dat[((lig / z) * wdth * 4) + ((4 * (col / z)) + 3)] = (unsigned char)somme;
-            }
-        }
-    }
-
-    imageX = XCreateImage(display, visual, depth, ZPixmap, 0, (char*)dat, wdth, lgth, 16, wdth * 4);
-    return (imageX);
-}
-
-//-------------------------//
-//-- Matrice de Flottant --//
-//-------------------------//
-//----------------------------------------------------------
-//  Alloue de la memoire pour une matrice 1d de float
-//----------------------------------------------------------
-float* fmatrix_allocate_1d(int hsize) {
-    float* matrix;
-    matrix = new float[hsize];
-    return matrix;
-}
-
-//----------------------------------------------------------
-//  Alloue de la memoire pour une matrice 2d de float
-//----------------------------------------------------------
-float** fmatrix_allocate_2d(int vsize, int hsize) {
-    float** matrix;
-    float* imptr;
-
-    matrix = new float*[vsize];
-    imptr = new float[(hsize) * (vsize)];
-    for (int i = 0; i < vsize; i++, imptr += hsize) {
-        matrix[i] = imptr;
-    }
-    return matrix;
-}
-
-//----------------------------------------------------------
-// Libere la memoire de la matrice 1d de float
-//----------------------------------------------------------
-void free_fmatrix_1d(float* pmat) { delete[] pmat; }
-
-//----------------------------------------------------------
-// Libere la memoire de la matrice 2d de float
-//----------------------------------------------------------
-void free_fmatrix_2d(float** pmat) {
-    delete[] (pmat[0]);
-    delete[] pmat;
-}
-
-//----------------------------------------------------------
-// Sauvegarde de l'image de nom <name> au format pgm
-//----------------------------------------------------------
-void SaveImagePgm(char* bruit, char* name, float** mat, int lgth, int wdth) {
-    int i, j;
-    char buff[300];
-    FILE* fic;
-
-    // Extension
-    strcpy(buff, bruit);
-    strcat(buff, name);
-    strcat(buff, ".pgm");
-
-    // Ouverture fichier
-    fic = fopen(buff, "wb");
-    if (fic == NULL) {
-        printf("Probleme dans la sauvegarde de %s", buff);
-        exit(-1);
-    }
-    printf("\n Sauvegarde de %s au format pgm\n", buff);
-
-    // Sauvegarde de l'entete
-    fprintf(fic, "P5");
-    fprintf(fic, "\n# IMG Module");
-    fprintf(fic, "\n%d %d", wdth, lgth);
-    fprintf(fic, "\n255\n");
-
-    // Enregistrement
-    for (i = 0; i < lgth; i++) {
-        for (j = 0; j < wdth; j++) {
-            fprintf(fic, "%c", (char)mat[i][j]);
-        }
-    }
-
-    // Fermeture fichier
-    fclose(fic);
-}
 
 //-------------------------//
 //---- Fonction Pour TP ---//
@@ -253,26 +30,30 @@ void SaveImagePgm(char* bruit, char* name, float** mat, int lgth, int wdth) {
 ///////////////////////////////////////////////////////////////////////////////
 
 // Function to integrate
-float f(float x) {
-    return 4 * sqrt(1 - pow(x, 2));
-}
+float f(float x) { return 4 * sqrt(1 - pow(x, 2)); }
 
 // Uses the trapezoidal rule for integration.
 // Uses naive summation.
-float calculateIntegral( float a, float b, int NBINTERV) {
-    
+float calculateIntegral(float a, float b, int NBINTERV) {
     float h = (b - a) / NBINTERV;
-    float integral = 0; 
+    float integral = 0.0;
 
-    float xi = a + h; 
-    float xi_prev = a; 
-
-    for (int i = 1 ; i <= NBINTERV; i++) {
-        integral += h / 2 * (f(xi) + f(xi_prev));
-        xi_prev = xi;
-        xi += h;
+    // We rewrote the sum. As is, it looks like this:
+    // float xi_prev = a;
+    // for (int i = 1; i <= NBINTERV; i++) {
+    //     float xi = a + i * h;
+    //     integral += (h * (f(xi) + f(xi_prev))) / 2;
+    //     xi_prev = xi;
+    // }
+    //
+    // Instead, the first and last terms are calculated separately
+    // and the middle terms are calculated in the loop.
+    for (int i = 1; i <= NBINTERV - 1; i++) {
+        float xi = a + i * h;
+        integral += f(xi);
     }
-    
+    integral = h * ((f(a) + f(b)) / 2.0 + integral);
+
     return integral;
 }
 
@@ -282,16 +63,14 @@ float calculateIntegral( float a, float b, int NBINTERV) {
 
 // Determines the integral on each subinterval and puts each value in an array
 float* calculate_array_subintegrals(float a, float b, int NBINTERV) {
-
-    float *array = new float[NBINTERV];
+    float* array = new float[NBINTERV];
     float h = (b - a) / NBINTERV;
-    float xi = a + h;
     float xi_prev = a;
 
     for (int i = 0; i < NBINTERV; i++) {
-        array[i] = h / 2 * (f(xi) + f(xi_prev));
+        float xi = a + i * h;
+        array[i] = (h * (f(xi_prev) + f(xi))) / 2;
         xi_prev = xi;
-        xi += h;
     }
 
     return array;
@@ -299,10 +78,10 @@ float* calculate_array_subintegrals(float a, float b, int NBINTERV) {
 
 float pairwise_sum(float* array, int left, int right) {
     // Base case
-    if (left == right) return array[left];
+    if (left == right || left > right) return array[left];
 
-    // Recursive case 
-    int middle = left  + (right - left) / 2;
+    // Recursive case
+    int middle = (left + right) / 2;
     float left_sum = pairwise_sum(array, left, middle);
     float right_sum = pairwise_sum(array, middle + 1, right);
     return left_sum + right_sum;
@@ -312,19 +91,55 @@ float pairwise_sum(float* array, int left, int right) {
 // Question 1.3
 ///////////////////////////////////////////////////////////////////////////////
 
-float kahan_sum(float* array, size_t n) { // n is the length of the array
-   
-    float e = 0; // Rounding error
-    float s = 0; // Summation
+// n is the length of the array
+float kahan_sum(float* array, size_t n) {
+    // Here is the original Kahan algorithm as asked in the question
+    // float sum = 0.0;
+    // float compensation = 0.0;
+    //
+    // for (int i = 0; i < n; i++) {
+    //     float y = array[i] + compensation;
+    //     float temp = sum;
+    //     sum += y;
+    //     compensation = (temp - sum) + y;
+    // }
+    //
+    // return sum;
 
-    for (int i = 0; i < n; i ++) {
-        float temp = s;
-        float y = array[i] + e;
-        s = temp + y;
-        e = (temp - s) + y;
+    // Here is a "second-order iterative Kahan–Babuška algorithm" by Klein
+    // https://link.springer.com/article/10.1007/s00607-005-0139-x
+    float sum = 0.0;
+    float compensation_sum_1 = 0.0;
+    float compensation_sum_2 = 0.0;
+
+    for (int i = 1; i < n; i++) {
+        float compensation_1, compensation_2;
+        float temp = sum + array[i];
+
+        // First order correction
+        if (fabs(sum) >= fabs(array[i])) {
+            compensation_1 = (sum - temp) + array[i];
+        } else {
+            compensation_1 = (array[i] - temp) + sum;
+        }
+
+        sum = temp;
+        temp = compensation_sum_1 + compensation_1;
+
+        // Second order correction
+        if (fabs(compensation_sum_1) >= fabs(compensation_1)) {
+            compensation_2 = (compensation_sum_1 - temp) + compensation_1;
+        } else {
+            compensation_2 = (compensation_1 - temp) + compensation_sum_1;
+        }
+
+        // Update the compensations sum
+        compensation_sum_1 = temp;
+        compensation_sum_2 = compensation_sum_2 + compensation_2;
     }
 
-    return s;
+    // Correct error at the end instead of at each step
+    return sum + (compensation_sum_1 + compensation_sum_2);
 }
 
 //----------------------------------------------------------
@@ -333,30 +148,6 @@ float kahan_sum(float* array, size_t n) { // n is the length of the array
 //----------------------------------------------------------
 //----------------------------------------------------------
 int main(int argc, char** argv) {
-    int i, j, k, l;
-    int flag_graph;
-    int zoom;
-
-    // Pour Xwindow
-    //------------
-    XEvent ev;
-    Window win_ppicture;
-    XImage* x_ppicture;
-    char nomfen_ppicture[100];
-    int length, width;
-
-    length = width = 4096;
-    float** Graph2D = fmatrix_allocate_2d(length, width);
-    flag_graph = 1;
-    zoom = -16;
-
-    // Affichage Axes
-    for (i = 0; i < length; i++) {
-        for (j = 0; j < width; j++) {
-            Graph2D[i][j] = 190.0;
-        }
-    }
-
     //--------------------------------------------------------------------------------
     // PROGRAMME ---------------------------------------------------------------------
     //--------------------------------------------------------------------------------
@@ -368,24 +159,31 @@ int main(int argc, char** argv) {
     // Cst
     const double PI = 3.14159265358979323846264338;
     int NBINTERV = 5000000;
-    int NbInt = NBINTERV;
-    if (argc > 1) {
-        NbInt = atoi(argv[1]);
-    }
-    float* VctPts = fmatrix_allocate_1d(NbInt + 1);
 
-    
     // Question 1.1
     float a = 0;
     float b = 1;
-    float integral = calculateIntegral(a, b, NBINTERV); 
+    float integral = calculateIntegral(a, b, NBINTERV);
+    float error = fabs(integral - PI);
+    float logError = log10(error);
+    printf("[1>Given_Order:]  Pi=%10.10f  Er=%10.10f  LogEr=%2.2f  \n", integral, error, logError);
 
     // Question 1.2
     float* array = calculate_array_subintegrals(a, b, NBINTERV);
     integral = pairwise_sum(array, 0, NBINTERV - 1);
+    error = fabs(integral - PI);
+    logError = log10(error);
+    printf("[2>PairwiseSum:]  Pi=%10.10f  Er=%10.10f  LogEr=%2.2f  \n", integral, error, logError);
 
     // Question 1.3
     integral = kahan_sum(array, NBINTERV);
-    
-    return 0; 
+    error = fabs(integral - PI);
+    logError = log10(error);
+    printf("[3>KahanSummat:]  Pi=%10.10f  Er=%10.10f  LogEr=%2.2f  \n", integral, error, logError);
+
+    // [1>Given_Order:]  Pi=3.1334464550  Er=0.0081461986  LogEr=-2.09
+    // [2>PairwiseSum:]  Pi=3.1415925026  Er=0.0000001510  LogEr=-6.82
+    // [3>KahanSummat:]  Pi=3.1415927410  Er=0.0000000874  LogEr=-7.06
+
+    return 0;
 }
