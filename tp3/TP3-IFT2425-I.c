@@ -18,8 +18,6 @@
 #include <time.h>
 
 #include <cstddef>
-#include <iostream>
-#include <new>
 
 //-------------------------//
 //---- Fonction Pour TP ---//
@@ -133,7 +131,7 @@ float kahan_sum(float* array, size_t n) {
             compensation_2 = (compensation_1 - temp) + compensation_sum_1;
         }
 
-        // Update the compensations sum
+        // Update the compensation sums
         compensation_sum_1 = temp;
         compensation_sum_2 = compensation_sum_2 + compensation_2;
     }
@@ -148,15 +146,6 @@ float kahan_sum(float* array, size_t n) {
 //----------------------------------------------------------
 //----------------------------------------------------------
 int main(int argc, char** argv) {
-    //--------------------------------------------------------------------------------
-    // PROGRAMME ---------------------------------------------------------------------
-    //--------------------------------------------------------------------------------
-
-    // Var
-    float result;
-    double result_;
-
-    // Cst
     const double PI = 3.14159265358979323846264338;
     int NBINTERV = 5000000;
 
@@ -180,10 +169,6 @@ int main(int argc, char** argv) {
     error = fabs(integral - PI);
     logError = log10(error);
     printf("[3>KahanSummat:]  Pi=%10.10f  Er=%10.10f  LogEr=%2.2f  \n", integral, error, logError);
-
-    // [1>Given_Order:]  Pi=3.1334464550  Er=0.0081461986  LogEr=-2.09
-    // [2>PairwiseSum:]  Pi=3.1415925026  Er=0.0000001510  LogEr=-6.82
-    // [3>KahanSummat:]  Pi=3.1415927410  Er=0.0000000874  LogEr=-7.06
 
     return 0;
 }

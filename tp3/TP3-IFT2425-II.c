@@ -17,9 +17,6 @@
 #include <string.h>
 #include <time.h>
 
-#include <iostream>
-#include <new>
-
 //-------------------------
 // Windows
 //-------------------------
@@ -247,73 +244,24 @@ void SaveImagePgm(char* bruit, char* name, float** mat, int lgth, int wdth) {
 //---- Fonction Pour TP ---//
 //-------------------------//
 
-// Determines the pixel (i, j) associated to some mu and x
-int* determine_pixel(float mu, float x, int length, int width) {
-
-    // Determine i
-    float step = (4 - 2.5) / length;
-    int i = (mu - 2.5) / step;
-
-    // Determine j
-    int j = (int) (width - 1) * x; // Floors the value
-
-    static int pixel[2];
-    pixel[0] = i;
-    pixel[1] = j;
-    return pixel;
-}
-
-
-void color_limit_set(float mu, float **Graph2D, int length, int width) {
-
+void color_limit_set(float x0, float mu, float** Graph2D, int height, int j) {
     int N1 = 10000;
     int N2 = 20000;
-
-    float x = 0.5;
-
-    // First 10000 iterations of the sequence
-    for (int k = 1; k <= N1 ; k++) {
-        x = mu * x * (1 - x);
-    }
-
-    // Iterations 10001 to 20000 of the sequence
-    for (int k = N1 + 1 ; k <= N2; k++) {
-        x = mu * x * (1 - x);
-
-        // Determine the pixel
-        int* pixel = determine_pixel(mu, x, length, width);
-        int i = pixel[0]; int j = pixel[1];
-
-        Graph2D[i][j] = 0; // Pixel colored in black
-    }
-}
-
-// Question 4 
-float calculate_x_float(float mu, float x0) {
-
-    int N = pow(10, 7);
     float x = x0;
 
-    int sum = 0;
-    for (int i = 0; i < N; i++) {
+    // First N1 iterations of the sequence
+    for (int k = 0; k < N1; k++) {
         x = mu * x * (1 - x);
-        sum += sqrt(x); // TODO: naive sum; maybe change the way we sum
     }
 
-    return 2.0 * N / sum;
-}
-
-double calculate_x_double(float mu, float x0) {
-    int N = pow(10, 7);
-    double x = x0;
-
-    int sum = 0;
-    for (int i = 0; i < N; i++) {
+    // Iterations N1 to N2 of the sequence
+    for (int k = N1; k < N2; k++) {
         x = mu * x * (1 - x);
-        sum += sqrt(x); // TODO: naive sum; maybe change the way we sum
-    }
 
-    return 2.0 * N / sum;
+        // Get the pixel y position based on the value of x
+        int i = height - (height - 1) * x;
+        Graph2D[i][j] = 0;
+    }
 }
 
 //----------------------------------------------------------
@@ -326,21 +274,23 @@ int main(int argc, char** argv) {
     int flag_graph;
     int zoom;
 
-    // Pour Xwindow
+    //------------
+    // Pour XWindow
     //------------
     XEvent ev;
     Window win_ppicture;
     XImage* x_ppicture;
     char nomfen_ppicture[100];
-    int length, width;
+    int height, width;
 
-    length = width = 4096;
-    float** Graph2D = fmatrix_allocate_2d(length, width);
+    height = 4096;
+    width = height;
+    float** Graph2D = fmatrix_allocate_2d(height, width);
     flag_graph = 1;
     zoom = -16;
 
     // Affichage Axes
-    for (i = 0; i < length; i++) {
+    for (i = 0; i < height; i++) {
         for (j = 0; j < width; j++) {
             Graph2D[i][j] = 190.0;
         }
@@ -349,45 +299,17 @@ int main(int argc, char** argv) {
     //--------------------------------------------------------------------------------
     // PROGRAMME ---------------------------------------------------------------------
     //--------------------------------------------------------------------------------
-
-    // Var
-    float result;
-    double result_;
-
-    // Cst
-    const double PI = 3.14159265358979323846264338;
-    int NBINTERV = 5000000;
-    int NbInt = NBINTERV;
-    if (argc > 1) {
-        NbInt = atoi(argv[1]);
-    }
-    float* VctPts = fmatrix_allocate_1d(NbInt + 1);
-
-    
-    // Code (Justin) 
-    // Question 3 (Logistic sequence)
-    float mu_upperbound = 4;
     float mu_lowerbound = 2.5;
-    float step = (mu_upperbound - mu_lowerbound) / length; // TODO : À vérifier
-    float mu = mu_lowerbound;
+    float mu_upperbound = 4;
+    float mu_step = (mu_upperbound - mu_lowerbound) / width;
+    float mu0 = mu_lowerbound;
+    float x0 = 0.5;
 
-    for (int i = 0; i < length; i++) {
-        color_limit_set(mu, Graph2D, length, width);
-        mu += step;
+    for (int i = 0; i < width; i++) {
+        float mu = mu0 + i * mu_step;
+        int pixel_x_position = ((mu - mu_lowerbound) * (width - 1)) / (mu_upperbound - mu_lowerbound);
+        color_limit_set(x0, mu, Graph2D, height, pixel_x_position);
     }
-
-    // Question 4 (pi approximation)
-    
-    // With floats
-    float x;
-    x = calculate_x_float(mu, 0.2);
-    x = calculate_x_float(mu, 0.4);
-    x = calculate_x_float(mu, 0.6);
-
-    // With doubles
-    x = calculate_x_double(mu, 0.2);
-    x = calculate_x_double(mu, 0.4);
-    x = calculate_x_double(mu, 0.6);
 
     //--------------------------------------------------------------------------------
     //---------------- visu sous XWINDOW ---------------------------------------------
@@ -398,8 +320,8 @@ int main(int argc, char** argv) {
             printf(" Impossible d'ouvrir une session graphique");
         }
         sprintf(nomfen_ppicture, "Graphe : ", "");
-        win_ppicture = fabrique_window(nomfen_ppicture, 10, 10, width, length, zoom);
-        x_ppicture = cree_Ximage(Graph2D, zoom, length, width);
+        win_ppicture = fabrique_window(nomfen_ppicture, 10, 10, width, height, zoom);
+        x_ppicture = cree_Ximage(Graph2D, zoom, height, width);
 
         // Sauvegarde
         // SaveImagePgm((char*)"",(char*)"Graphe",Graph2D,length,width); //Pour sauvegarder l'image
