@@ -1,0 +1,2 @@
+CompileFlags:
+  Add: [-I/usr/X11/include, -L/usr/X11/lib, -lm, -lX11, -xc++]

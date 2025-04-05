@@ -39,9 +39,7 @@ int open_display() {
     if ((display = XOpenDisplay(NULL)) == NULL) {
         printf("Connection impossible\n");
         return (-1);
-    }
-
-    else {
+    } else {
         screen_num = DefaultScreen(display);
         visual = DefaultVisual(display, screen_num);
         depth = DefaultDepth(display, screen_num);
@@ -305,7 +303,7 @@ XImage *cree_XimageWithMvt(float **matImg, float **vctMvt, int z, int length, in
 //-------------------------//
 //--- Fonctions Pour TP ---//
 //-------------------------//
-//---------------------------------------------------------
+//----------------------------------------------------------
 //  Alloue de la memoire pour une matrice 1d de float
 //----------------------------------------------------------
 float *fmatrix_allocate_1d(int hsize) {
