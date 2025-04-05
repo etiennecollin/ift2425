@@ -107,7 +107,7 @@ int open_display() {
 
 /************************************************************************/
 /* FABRIQUE_WINDOW()                                                    */
-/* Cette fonction crée une fenetre X et l'affiche à l'écran.            */
+/* Cette fonction crÃ©e une fenetre X et l'affiche Ã  l'Ã©cran.            */
 /************************************************************************/
 Window fabrique_window(char* nom_fen, int x, int y, int width, int height, int zoom) {
     Window win;
@@ -155,7 +155,7 @@ Window fabrique_window(char* nom_fen, int x, int y, int width, int height, int z
 
 /****************************************************************************/
 /* CREE_XIMAGE()                                                            */
-/* Crée une XImage à partir d'un tableau de float                           */
+/* CrÃ©e une XImage Ã  partir d'un tableau de float                           */
 /* L'image peut subir un zoom.                                              */
 /****************************************************************************/
 XImage* cree_Ximage(float** mat, int z, int length, int width) {
@@ -165,7 +165,7 @@ XImage* cree_Ximage(float** mat, int z, int length, int width) {
     unsigned char* dat;
     XImage* imageX;
 
-    // Zoom positif et négatif
+    // Zoom positif et nÃ©gatif
     if (z > 0) {
         lgth = length * z;
         wdth = width * z;
@@ -423,8 +423,8 @@ int main(int argc, char** argv) {
     // Il faut travailler ici ...et dans > // FONCTIONS TPs
 
     // Un exemple ou la matrice de points est remplie
-    // par une courbe donné par l'équation d'en bas... et non pas par
-    // la solution de l'équation différentielle
+    // par une courbe donnÃ© par l'Ã©quation d'en bas... et non pas par
+    // la solution de l'Ã©quation diffÃ©rentielle
 
     for (k = 0; k < (int)(NB_INTERV); k++) {
         MatPts[k][0] = (k / (float)(NB_INTERV)) * cos((k * 0.0001) * 3.14159);
@@ -450,14 +450,14 @@ int main(int argc, char** argv) {
     printf("\n\n Stat:  Xmin=[%.2f] Xmax=[%.2f] Ymin=[%.2f] Ymax=[%.2f]\n", Xmin, Xmax, Ymin, Ymax);
 
     //--------------------------------------------------------------------------------
-    //-------------- visu sous XWINDOW de l'évolution de MatPts ----------------------
+    //-------------- visu sous XWINDOW de l'Ã©volution de MatPts ----------------------
     //--------------------------------------------------------------------------------
     if (flag_graph) {
         // Uuverture Session Graphique
         if (open_display() < 0) {
             printf(" Impossible d'ouvrir une session graphique");
         }
-        sprintf(nomfen_ppicture, "Évolution du Graphe");
+        sprintf(nomfen_ppicture, "Ã‰volution du Graphe");
         win_ppicture = fabrique_window(nomfen_ppicture, 10, 10, HEIGHT, WIDTH, zoom);
         x_ppicture = cree_Ximage(MatPict, zoom, HEIGHT, WIDTH);
 
