@@ -2,18 +2,19 @@
 
 use nalgebra::{dmatrix, dvector};
 #[allow(unused_imports)]
-use utils::{cse::*, norms::*, root_search::*, systems::*, utils::*};
+use utils::{cse::*, norms::*, polynomial_interpolation::*, root_search::*, systems::*, utils::*};
 
 const ITERATIONS_MAX: usize = 100;
 const X_TOLERANCE: f64 = 1e-5;
 const F_X_TOLERANCE: f64 = 1e-5;
 
 fn main() {
-    error_analysis();
-    root_search();
-    linear_systems();
-    norms();
-    non_linear_systems();
+    // error_analysis();
+    // root_search();
+    // linear_systems();
+    // norms();
+    // non_linear_systems();
+    polynomial_interpolation();
 }
 
 fn error_analysis() {
@@ -186,4 +187,27 @@ fn non_linear_systems() {
     //     ITERATIONS_MAX,
     // )
     // .unwrap();
+}
+
+fn polynomial_interpolation() {
+    let xs = [0.1, 0.5, 0.9, 1.3, 1.7];
+    let fs = [0.09983, 0.47943, 0.78333, 0.96356, 0.99166];
+    let x = 0.8;
+    let degree = 2;
+
+    let _ = lagrange(degree, x, &xs, &fs);
+
+    // With f = sin(x) -> f^(2+1) = -cos(x)
+    let derivative: FuncSingle = |x| -x.cos();
+    let _ = lagrange_polynomial_error_range(degree, derivative, x, &xs).unwrap();
+
+    // Compute delta^k f_i
+    // for d in 0..fs.len() {
+    //     for i in 0..(fs.len() - d) {
+    //         println!("delta: {}, i: {}, res: {}", d, i, delta_f_i(d, i, &fs));
+    //     }
+    // }
+
+    let _ = newton_gregory_forward(degree, x, &xs, &fs).unwrap();
+    let _ = scratch(degree, x, &xs, &fs).unwrap();
 }
