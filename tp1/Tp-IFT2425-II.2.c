@@ -181,7 +181,7 @@ XImage *cree_Ximage(float **mat, int z, int length, int width) {
 //-- Matrice de Flottant --//
 //-------------------------//
 //----------------------------------------------------------
-//  alloue de la memoire pour une matrice 1d de float
+// Alloue de la memoire pour une matrice 1d de float
 //----------------------------------------------------------
 float *fmatrix_allocate_1d(int hsize) {
     float *matrix;
@@ -190,7 +190,7 @@ float *fmatrix_allocate_1d(int hsize) {
 }
 
 //----------------------------------------------------------
-//  alloue de la memoire pour une matrice 2d de float
+// Alloue de la memoire pour une matrice 2d de float
 //----------------------------------------------------------
 float **fmatrix_allocate_2d(int vsize, int hsize) {
     float **matrix;
@@ -295,7 +295,7 @@ void Recal(float **mat, int lgth, int wdth) {
 }
 
 //----------------------------------------------------------
-//  Egalisation Histogramme
+// Egalisation Histogramme
 //----------------------------------------------------------
 void Egalise(float **img, int lgth, int wdth, int thresh) {
     int i, j;
