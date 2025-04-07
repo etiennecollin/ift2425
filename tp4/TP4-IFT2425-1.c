@@ -10,6 +10,7 @@
 //------------------------------------------------
 // FICHIERS INCLUS -------------------------------
 //------------------------------------------------
+#include <cmath>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -383,6 +384,99 @@ void Fill_Pict(float** MatPts, float** MatPict, int PtsNumber, int NbPts) {
 //------------------------------------------------
 // FONCTIONS TPs ---------------------------------
 //------------------------------------------------
+
+void f(double t, double u[4], double out[4]) {
+
+    double x[3];
+    x[0] = X_1;
+    x[1] = X_2;
+    x[2] = X_3;
+
+    double y[3];
+    y[0] = Y_1;
+    y[1] = Y_2;
+    y[2] = Y_3;
+
+    double sum1 = 0, sum2 = 0;
+
+    for (int i = 0; i < 3; i++) {
+        double denom = pow(x[i] - u[0], 2) + pow(y[i] - u[2], 2) + pow(D, 2); // The denominator in the sum
+            
+        sum1 += (x[i] - u[0]) / pow(denom, 2.0 / 3.0);
+        sum2 += (y[i] - u[0]) / pow(denom, 2.0 / 3.0);
+    }
+
+    double f0 = u[1];
+    double f1 = u[3];
+    double f2 = sum1 - R * u[1] - C * u[0];
+    double f3 = sum2 - R * u[3] - C * u[2];
+
+    out[0] = f0;
+    out[1] = f1;
+    out[2] = f2;
+    out[4] = f3;
+}
+
+
+// Uses the Runge Kutta Fehlberg method
+// Updates the vector u
+void calculate_next_rk_value(double t, double u[4], double out[4]) { 
+    
+    // Calculate k1
+    f(t, u, out);
+    double k1[4];
+    k1[0] = H * out[0];
+    k1[1] = H * out[1];
+    k1[2] = H * out[2];
+    k1[3] = H * out[3];
+
+    // Calculate k2
+    double temp[4];
+    
+    for (int i = 0; i < 4; i++) {
+        temp[i] = u[i] + 1.0/2 * k1[i];
+    }
+
+    f(t + 1.0 / 2 * H, temp, out);
+    double k2[4];
+    k2[0] = H * out[0];
+    k2[1] = H * out[1];
+    k2[2] = H * out[2];
+    k2[3] = H * out[3];
+
+    // Calculate k3
+
+    for (int i = 0; i < 4; i++) {
+        temp[i] = u[i] + 1.0 / 2 * k2[i];
+    }
+
+    f(t + 1.0 / 2 * H, temp, out);
+    double k3[4];
+    k3[0] = H * out[0];
+    k3[1] = H * out[1];
+    k3[2] = H * out[2];
+    k3[3] = H * out[3];
+
+    // Calculate k4
+
+    for (int i = 0; i < 4; i++) {
+        temp[i] = u[i] + k3[i];
+    }
+
+    f(t + H, temp, out);
+    double k4[4];
+    k4[0] = H * out[0];
+    k4[1] = H * out[1];
+    k4[2] = H * out[2];
+    k4[3] = H * out[3];
+
+    // Update u
+
+    u[0] = u[0] + 1.0 / 6 * k1[0] + 1.0 / 3 * k2[0] + 1.0 / 3 * k3[0] + 1.0 / 6 * k4[0];
+    u[1] = u[1] + 1.0 / 6 * k1[1] + 1.0 / 3 * k2[1] + 1.0 / 3 * k3[1] + 1.0 / 6 * k4[1];
+    u[2] = u[2] + 1.0 / 6 * k1[2] + 1.0 / 3 * k2[2] + 1.0 / 3 * k3[2] + 1.0 / 6 * k4[2];
+    u[3] = u[3] + 1.0 / 6 * k1[3] + 1.0 / 3 * k2[3] + 1.0 / 3 * k3[3] + 1.0 / 6 * k4[3];
+}
 
 //----------------------------------------------------------
 // MAIN
