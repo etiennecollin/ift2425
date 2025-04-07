@@ -527,43 +527,6 @@ void fill_Mat_Pts(float MatPts[(int)(NB_INTERV)][2], float x0, float y0) {
     }
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Question 2
-///////////////////////////////////////////////////////////////////////////////
-
-// Let v = (v1, v2) be a vector.
-// Computes the L1 norm of v
-float calculate_L1_norm(float v1, float v2) {
-    return abs(v1) + abs(v2);
-}
-
-// If in neighborhood of magnet i, returns i , where i = 1, 2, 3
-int in_neighborhood(float x, float y) {
-
-    float v[2];
-
-    // Magnet 1
-    v[0] = X_1 - x;
-    v[1] = Y_1 - y;
-
-    if (calculate_L1_norm(v[0], v[1]) < 0.5) return 1; // Close to magnet 1 
-    
-    // Magnet 2
-    v[0] = X_2 - x;
-    v[1] = Y_2 - y;
-
-    if (calculate_L1_norm(v[0], v[1]) < 0.5) return 2; // Close to magnet 2
-
-    // Magnet 3
-    v[0] = X_3 - x;
-    v[1] = Y_3 - y;
-
-    if (calculate_L1_norm(v[0], v[1]) < 0.5) return 3; // Close to magnet 3
-
-    else return -1; // Not close to a magnet s
-}
-
-
 //----------------------------------------------------------
 // MAIN
 //----------------------------------------------------------
