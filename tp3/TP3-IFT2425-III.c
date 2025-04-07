@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
 
     // With floats
     float x_float;
-    printf("With floats\n");
+    printf("With floats:\n");
     x_float = calculate_x_float(mu, 0.2, n);
     printf("[0.20:>%10.10f]\n", x_float);
     x_float = calculate_x_float(mu, 0.4, n);
@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
 
     // With doubles
     double x_double;
-    printf("With doubles\n");
+    printf("With doubles:\n");
     x_double = calculate_x_double(mu, 0.2, n);
     printf("[0.20:>%10.10f]\n", x_double);
     x_double = calculate_x_double(mu, 0.4, n);
