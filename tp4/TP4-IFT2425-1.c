@@ -58,8 +58,8 @@ GC gc;
 
 // Cst-Runge-Kutta
 #define H 0.0001
-#define T_0 0.0
-#define T_F 30.0
+#define T_0 0.0     // Initial time
+#define T_F 30.0    // Final time 
 #define NB_INTERV (T_F - T_0) / H
 
 // Cst-Image
@@ -385,31 +385,31 @@ void Fill_Pict(float** MatPts, float** MatPict, int PtsNumber, int NbPts) {
 // FONCTIONS TPs ---------------------------------
 //------------------------------------------------
 
-void f(double t, double u[4], double out[4]) {
+void f(float t, float u[4], float out[4]) {
 
-    double x[3];
+    float x[3];
     x[0] = X_1;
     x[1] = X_2;
     x[2] = X_3;
 
-    double y[3];
+    float y[3];
     y[0] = Y_1;
     y[1] = Y_2;
     y[2] = Y_3;
 
-    double sum1 = 0, sum2 = 0;
+    float sum1 = 0, sum2 = 0;
 
     for (int i = 0; i < 3; i++) {
-        double denom = pow(x[i] - u[0], 2) + pow(y[i] - u[2], 2) + pow(D, 2); // The denominator in the sum
+        float denom = pow(x[i] - u[0], 2) + pow(y[i] - u[2], 2) + pow(D, 2); // The denominator in the sum
             
         sum1 += (x[i] - u[0]) / pow(denom, 2.0 / 3.0);
         sum2 += (y[i] - u[2]) / pow(denom, 2.0 / 3.0);
     }
 
-    double f0 = u[1];
-    double f1 = u[3];
-    double f2 = sum1 - R * u[1] - C * u[0];
-    double f3 = sum2 - R * u[3] - C * u[2];
+    float f0 = u[1];
+    float f1 = u[3];
+    float f2 = sum1 - R * u[1] - C * u[0];
+    float f3 = sum2 - R * u[3] - C * u[2];
 
     out[0] = f0;
     out[1] = f1;
@@ -420,25 +420,26 @@ void f(double t, double u[4], double out[4]) {
 
 // Uses the Runge Kutta Fehlberg method
 // Updates the vector u
-void calculate_next_rk_value(double t, double u[4], double out[4]) { 
+// Out is related to the f function
+void calculate_next_rk_value(float t, float u[4], float out[4]) { 
     
     // Calculate k1
     f(t, u, out);
-    double k1[4];
+    float k1[4];
 
     for (int i = 0; i < 4; i++) {
         k1[i] = H * out[i];
     }
 
     // Calculate k2 
-    double temp[4];
+    float temp[4];
     
     for (int i = 0; i < 4; i++) {
         temp[i] = u[i] + (1.0/4.0) * k1[i];
     }
 
     f(t + (1.0 / 4.0) * H, temp, out);
-    double k2[4];
+    float k2[4];
 
     for (int i = 0; i < 4; i++) {
         k2[i] = H * out[i];
@@ -451,7 +452,7 @@ void calculate_next_rk_value(double t, double u[4], double out[4]) {
     }
 
     f(t + (3.0/8.0) * H, temp, out);
-    double k3[4];
+    float k3[4];
 
     for (int i = 0; i < 4; i++) {
         k3[i] = H * out[i];
@@ -464,7 +465,7 @@ void calculate_next_rk_value(double t, double u[4], double out[4]) {
     }
 
     f(t + (12.0/13.0) * H, temp, out);
-    double k4[4];
+    float k4[4];
 
     for (int i = 0; i < 4; i++) {
         k4[i] = H * out[i];
@@ -477,7 +478,7 @@ void calculate_next_rk_value(double t, double u[4], double out[4]) {
     }
 
     f(t + H, temp, out);
-    double k5[4];
+    float k5[4];
 
     for (int i = 0; i < 4; i++) {
         k5[i] = H * out[i];
@@ -490,7 +491,7 @@ void calculate_next_rk_value(double t, double u[4], double out[4]) {
     }
 
     f(t + (1.0 / 2.0) * H, temp, out);
-    double k6[4];
+    float k6[4];
 
     for (int i = 0; i < 4; i++) {
         k6[i] = H * out[i];
@@ -501,6 +502,26 @@ void calculate_next_rk_value(double t, double u[4], double out[4]) {
         u[i] = u[i] + (25.0 / 216.0) * k1[i] + (1408.0 / 2565.0) * k3[i] + (2.0 / 3.0) * k4[i] + (1.0 / 6.0) * k5[i];
     }
 }
+
+
+void fill_Mat_Pts(float MatPts[(int)(NB_INTERV)][2], float x0, float y0) {
+
+    // Initial conditions of ODE
+    float u[4];
+    u[0] = x0;
+    u[1] = 0;
+    u[2] = y0;
+    u[3] = 0; 
+
+    float out[4]; // For f function
+
+    for (int k = 0; k < (int)(NB_INTERV); k++) {
+        MatPts[k][0] = u[0]; // u[0] = x
+        MatPts[k][1] = u[2]; // u[2] = y
+        calculate_next_rk_value((k + 1) * H, u, out); // Updates U
+    }
+}
+
 
 //----------------------------------------------------------
 // MAIN
