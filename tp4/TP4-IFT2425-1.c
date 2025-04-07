@@ -403,7 +403,7 @@ void f(double t, double u[4], double out[4]) {
         double denom = pow(x[i] - u[0], 2) + pow(y[i] - u[2], 2) + pow(D, 2); // The denominator in the sum
             
         sum1 += (x[i] - u[0]) / pow(denom, 2.0 / 3.0);
-        sum2 += (y[i] - u[0]) / pow(denom, 2.0 / 3.0);
+        sum2 += (y[i] - u[2]) / pow(denom, 2.0 / 3.0);
     }
 
     double f0 = u[1];
@@ -414,7 +414,7 @@ void f(double t, double u[4], double out[4]) {
     out[0] = f0;
     out[1] = f1;
     out[2] = f2;
-    out[4] = f3;
+    out[3] = f3;
 }
 
 
@@ -425,57 +425,81 @@ void calculate_next_rk_value(double t, double u[4], double out[4]) {
     // Calculate k1
     f(t, u, out);
     double k1[4];
-    k1[0] = H * out[0];
-    k1[1] = H * out[1];
-    k1[2] = H * out[2];
-    k1[3] = H * out[3];
 
-    // Calculate k2
+    for (int i = 0; i < 4; i++) {
+        k1[i] = H * out[i];
+    }
+
+    // Calculate k2 
     double temp[4];
     
     for (int i = 0; i < 4; i++) {
-        temp[i] = u[i] + 1.0/2 * k1[i];
+        temp[i] = u[i] + (1.0/4.0) * k1[i];
     }
 
-    f(t + 1.0 / 2 * H, temp, out);
+    f(t + (1.0 / 4.0) * H, temp, out);
     double k2[4];
-    k2[0] = H * out[0];
-    k2[1] = H * out[1];
-    k2[2] = H * out[2];
-    k2[3] = H * out[3];
+
+    for (int i = 0; i < 4; i++) {
+        k2[i] = H * out[i];
+    }
 
     // Calculate k3
 
     for (int i = 0; i < 4; i++) {
-        temp[i] = u[i] + 1.0 / 2 * k2[i];
+        temp[i] = u[i] + (3.0 / 32.0) * k1[i] + (9.0/32.0) * k2[i];
     }
 
-    f(t + 1.0 / 2 * H, temp, out);
+    f(t + (3.0/8.0) * H, temp, out);
     double k3[4];
-    k3[0] = H * out[0];
-    k3[1] = H * out[1];
-    k3[2] = H * out[2];
-    k3[3] = H * out[3];
+
+    for (int i = 0; i < 4; i++) {
+        k3[i] = H * out[i];
+    }
 
     // Calculate k4
 
     for (int i = 0; i < 4; i++) {
-        temp[i] = u[i] + k3[i];
+        temp[i] = u[i] + (1932.0 / 2197.0) * k1[i] + (7200.0 / 2197.0) * k2[i] + (7296.0 / 2197.0) * k3[i];
+    }
+
+    f(t + (12.0/13.0) * H, temp, out);
+    double k4[4];
+
+    for (int i = 0; i < 4; i++) {
+        k4[i] = H * out[i];
+    }
+
+    // Calculate k5
+    for (int i = 0; i < 4; i++) {
+        temp[i] = u[i] + (439.0 / 216.0) * k1[i] - 8 * k2[i] + 
+                  (3680.0 / 513.0) * k3[i] - 845.0 / 4104.0 * k4[i];
     }
 
     f(t + H, temp, out);
-    double k4[4];
-    k4[0] = H * out[0];
-    k4[1] = H * out[1];
-    k4[2] = H * out[2];
-    k4[3] = H * out[3];
+    double k5[4];
+
+    for (int i = 0; i < 4; i++) {
+        k5[i] = H * out[i];
+    }
+
+    // Calculate k6
+    for (int i = 0; i < 4; i++) {
+        temp[i] = u[i] - (8.0 / 27.0) * k1[i] + 2 * k2[i] +
+                  -(3544.0 / 2565.0) * k3[i] + 1859.0 / 4104.0 * k4[i] - (11.0 /40.0) * k5[i];
+    }
+
+    f(t + (1.0 / 2.0) * H, temp, out);
+    double k6[4];
+
+    for (int i = 0; i < 4; i++) {
+        k6[i] = H * out[i];
+    }
 
     // Update u
-
-    u[0] = u[0] + 1.0 / 6 * k1[0] + 1.0 / 3 * k2[0] + 1.0 / 3 * k3[0] + 1.0 / 6 * k4[0];
-    u[1] = u[1] + 1.0 / 6 * k1[1] + 1.0 / 3 * k2[1] + 1.0 / 3 * k3[1] + 1.0 / 6 * k4[1];
-    u[2] = u[2] + 1.0 / 6 * k1[2] + 1.0 / 3 * k2[2] + 1.0 / 3 * k3[2] + 1.0 / 6 * k4[2];
-    u[3] = u[3] + 1.0 / 6 * k1[3] + 1.0 / 3 * k2[3] + 1.0 / 3 * k3[3] + 1.0 / 6 * k4[3];
+    for (int i = 0; i < 4; i++) {
+        u[i] = u[i] + (25.0 / 216.0) * k1[i] + (1408.0 / 2565.0) * k3[i] + (2.0 / 3.0) * k4[i] + (1.0 / 6.0) * k5[i];
+    }
 }
 
 //----------------------------------------------------------
