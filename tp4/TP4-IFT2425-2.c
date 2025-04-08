@@ -11,6 +11,7 @@
 // FICHIERS INCLUS -------------------------------
 //------------------------------------------------
 #include <math.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,29 +36,33 @@ GC gc;
 #define CARRE(X) ((X) * (X))
 
 #define OUTPUT_FILE "Tp4-Img-II"
-#define VIEW_PGM "xv"
+#define VIEW_PGM "open"
 
 #define DEBUG 1
 #define TROIS 3
 
-// Cst-Modele
+// Constants Model
 #define X_1 0.0
 #define Y_1 1.0
 #define X_2 -1.0 / sqrt(2.0)
 #define Y_2 -1.0 / 2.0
-#define X_3 +1.0 / 2 * sqrt(2.0)
+#define X_3 1.0 / sqrt(2.0)
 #define Y_3 -1.0 / 2.0
 #define C 0.25
 #define R 0.1
 #define D 0.3
 
-// Cst-Runge-Kutta
+#define CONVERGENCE_RADIUS 0.5
+#define CONVERGENCE_ITERATIONS 20
+#define SHOW_COLORS false
+
+// Constants Runge-Kutta
 #define H 0.1
 #define T_0 0.0
 #define T_F 20.0
 #define NB_INTERV (T_F - T_0) / H
 
-// Cst-Image
+// Constants Image
 #define WIDTH 128
 #define HEIGHT 128
 #define MAX_X 4.0
@@ -73,10 +78,10 @@ GC gc;
 //------------------------------------------------
 // GLOBAL CST ------------------------------------
 //------------------------------------------------
-float Xmin = 0.0;
-float Xmax = 0.0;
-float Ymin = 0.0;
-float Ymax = 0.0;
+float Xmin = -(MAX_X / 2.0);
+float Xmax = MAX_X / 2.0;
+float Ymin = -(MAX_Y / 2.0);
+float Ymax = MAX_Y / 2.0;
 
 float xx_1 = ((WIDTH / MAX_X) * X_1) + (WIDTH / 2);
 float yy_1 = (-(HEIGHT / MAX_Y) * Y_1) + (HEIGHT / 2);
@@ -84,11 +89,6 @@ float xx_2 = ((WIDTH / MAX_X) * X_2) + (WIDTH / 2);
 float yy_2 = (-(HEIGHT / MAX_Y) * Y_2) + (HEIGHT / 2);
 float xx_3 = ((WIDTH / MAX_X) * X_3) + (WIDTH / 2);
 float yy_3 = (-(HEIGHT / MAX_Y) * Y_3) + (HEIGHT / 2);
-
-float X_1_INI;
-float X_2_INI;
-float X_3_INI;
-float X_4_INI;
 
 /************************************************************************/
 /* OPEN_DISPLAY()                                                       */
@@ -504,6 +504,132 @@ void Fill_Pict(float** MatPts, float** MatPict, int PtsNumber, int NbPts) {
 //------------------------------------------------
 // FONCTIONS TPs ---------------------------------
 //------------------------------------------------
+///////////////////////////////////////////////////////////////////////////////
+// Question 1
+///////////////////////////////////////////////////////////////////////////////
+
+void f(float t, float u[4], float out[4]) {
+    float x[3];
+    x[0] = X_1;
+    x[1] = X_2;
+    x[2] = X_3;
+
+    float y[3];
+    y[0] = Y_1;
+    y[1] = Y_2;
+    y[2] = Y_3;
+
+    float sum1 = 0, sum2 = 0;
+
+    for (int i = 0; i < 3; i++) {
+        float denom = powf(x[i] - u[0], 2) + powf(y[i] - u[2], 2) + powf(D, 2);  // The denominator in the sum
+
+        sum1 += (x[i] - u[0]) / powf(denom, 3.0 / 2.0);
+        sum2 += (y[i] - u[2]) / powf(denom, 3.0 / 2.0);
+    }
+
+    float f0 = u[1];
+    float f1 = sum1 - R * u[1] - C * u[0];
+    float f2 = u[3];
+    float f3 = sum2 - R * u[3] - C * u[2];
+
+    out[0] = f0;
+    out[1] = f1;
+    out[2] = f2;
+    out[3] = f3;
+}
+
+// Uses the Runge Kutta Fehlberg method
+// Updates the vector u
+// Out is related to the f function
+void calculate_next_rk_value(float t, float u[4], float out[4]) {
+    // ================================================
+    // Calculate k1
+    // ================================================
+    f(t, u, out);
+
+    float k1[4];
+    for (int i = 0; i < 4; i++) {
+        k1[i] = H * out[i];
+    }
+
+    // ================================================
+    // Calculate k2
+    // ================================================
+    float temp[4];
+    for (int i = 0; i < 4; i++) {
+        temp[i] = u[i] + (k1[i] / 4.0);
+    }
+    f(t + (H / 4.0), temp, out);
+
+    // Compute k2
+    float k2[4];
+    for (int i = 0; i < 4; i++) {
+        k2[i] = H * out[i];
+    }
+
+    // ================================================
+    // Calculate k3
+    // ================================================
+    for (int i = 0; i < 4; i++) {
+        temp[i] = u[i] + (3.0 / 32.0) * k1[i] + (9.0 / 32.0) * k2[i];
+    }
+    f(t + (3.0 / 8.0) * H, temp, out);
+
+    float k3[4];
+    for (int i = 0; i < 4; i++) {
+        k3[i] = H * out[i];
+    }
+
+    // ================================================
+    // Calculate k4
+    // ================================================
+    for (int i = 0; i < 4; i++) {
+        temp[i] = u[i] + (1932.0 / 2197.0) * k1[i] - (7200.0 / 2197.0) * k2[i] + (7296.0 / 2197.0) * k3[i];
+    }
+    f(t + (12.0 / 13.0) * H, temp, out);
+
+    float k4[4];
+    for (int i = 0; i < 4; i++) {
+        k4[i] = H * out[i];
+    }
+
+    // ================================================
+    // Calculate k5
+    // ================================================
+    for (int i = 0; i < 4; i++) {
+        temp[i] = u[i] + (439.0 / 216.0) * k1[i] - 8 * k2[i] + (3680.0 / 513.0) * k3[i] - (845.0 / 4104.0) * k4[i];
+    }
+    f(t + H, temp, out);
+
+    float k5[4];
+    for (int i = 0; i < 4; i++) {
+        k5[i] = H * out[i];
+    }
+
+    // ================================================
+    // Calculate k6
+    // ================================================
+    for (int i = 0; i < 4; i++) {
+        temp[i] = u[i] - (8.0 / 27.0) * k1[i] + 2.0 * k2[i] - (3544.0 / 2565.0) * k3[i] + 1859.0 / 4104.0 * k4[i] -
+                  (11.0 / 40.0) * k5[i];
+    }
+
+    f(t + (H / 2.0), temp, out);
+
+    float k6[4];
+    for (int i = 0; i < 4; i++) {
+        k6[i] = H * out[i];
+    }
+
+    // ================================================
+    // Update u
+    // ================================================
+    for (int i = 0; i < 4; i++) {
+        u[i] = u[i] + (16.0 / 135.0) * k1[i] + (6656.0 / 12825.0) * k3[i] + (28561.0 / 56430.0) * k4[i] -
+               (9.0 / 50.0) * k5[i] + (2.0 / 55.0) * k6[i];
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Question 2
@@ -515,32 +641,68 @@ float calculate_L1_norm(float v1, float v2) { return abs(v1) + abs(v2); }
 
 // If in neighborhood of magnet i, returns i , where i = 1, 2, 3
 int in_neighborhood(float x, float y) {
-
     float v[2];
 
     // Magnet 1
     v[0] = X_1 - x;
     v[1] = Y_1 - y;
 
-    if (calculate_L1_norm(v[0], v[1]) < 0.5)
-        return 1; // Close to magnet 1
+    if (calculate_L1_norm(v[0], v[1]) < CONVERGENCE_RADIUS) return 1;  // Close to magnet 1
 
     // Magnet 2
     v[0] = X_2 - x;
     v[1] = Y_2 - y;
 
-    if (calculate_L1_norm(v[0], v[1]) < 0.5)
-        return 2; // Close to magnet 2
+    if (calculate_L1_norm(v[0], v[1]) < CONVERGENCE_RADIUS) return 2;  // Close to magnet 2
 
     // Magnet 3
     v[0] = X_3 - x;
     v[1] = Y_3 - y;
 
-    if (calculate_L1_norm(v[0], v[1]) < 0.5)
-        return 3; // Close to magnet 3
+    if (calculate_L1_norm(v[0], v[1]) < CONVERGENCE_RADIUS) return 3;  // Close to magnet 3
 
-    else
-        return -1; // Not close to a magnet
+    // We are not close to any magnet
+    return -1;
+}
+
+int get_convergence(float x0, float x0_prime, float y0, float y0_prime, bool return_magnet) {
+    // Initial conditions of ODE
+    // u[0] = x, u[1] = x', u[2] = y, u[3] = y'
+    float u[4] = {x0, x0_prime, y0, y0_prime};
+
+    // For f function
+    float out[4] = {0.0, 0.0, 0.0, 0.0};
+
+    // Fill MatPts matrix
+    int convergence_counter = 0;
+    int converging_to = -1;
+    for (int k = T_0; k < (int)(NB_INTERV); k++) {
+        int check = in_neighborhood(u[0], u[2]);
+
+        // Check if we are in the neighborhood of a magnet
+        if (check == -1) {
+            convergence_counter = 0;
+        } else {
+            // Check if we are converging to the same magnet as before
+            if (converging_to != check) {
+                convergence_counter = 0;
+                converging_to = check;
+            }
+
+            convergence_counter++;
+
+            // Check for convergence
+            if (convergence_counter > CONVERGENCE_ITERATIONS) {
+                return return_magnet ? converging_to : k;
+            }
+        }
+
+        // Updates U
+        calculate_next_rk_value(k * H, u, out);
+    }
+
+    // We did not converge
+    return return_magnet ? -1 : NB_INTERV;
 }
 
 //----------------------------------------------------------
@@ -581,30 +743,36 @@ int main(int argc, char** argv) {
     // Question 2
     //---------------------------------------------------------------------
 
-    // Il faut travailler ici ...et dans > // FONCTIONS TPs
+    // Iterate on all pixels of the image
+    for (i = 0; i < HEIGHT; i++) {
+        for (j = 0; j < WIDTH; j++) {
+            // Current x and y as a percentage of the image
+            float x = Xmin + (float)j / (float)WIDTH * (Xmax - Xmin);
+            float y = Ymax - (float)i / (float)HEIGHT * (Ymax - Ymin);
 
-    // Un exemple ou la matrice de points MatPict est remplie
-    // Par une image couleur donné par l'équation d'en bas... et non pas par
-    // Les bassins d'attractions
+            // Check if we are in the neighborhood of a magnet
+            int k = get_convergence(x, 0.0, y, 0.0, SHOW_COLORS);
 
-    // For(k=0;k<TROIS;k++) for(i=0;i<HEIGHT;i++) for(j=0;j<WIDTH;j++)
-    //     {  MatPict[k][i][j]=(i+j*k*i)%255; }
-
-    // Un exemple ou la matrice de points MatPict est remplie
-    // Par une image en niveaux de gris  donné par l'équation d'en bas... et non pas par
-    // La vitesse de convergence
-
-    for (k = 0; k < TROIS; k++) {
-        for (i = 0; i < HEIGHT; i++) {
-            for (j = 0; j < WIDTH; j++) {
-                MatPict[0][i][j] = (i + j * k * i) % 255;
-                MatPict[1][i][j] = (i + j * k * i) % 255;
-                MatPict[2][i][j] = (i + j * k * i) % 255;
+            // Check how to color the pixel
+            if (SHOW_COLORS) {
+                if (k == 1) {
+                    MatPict[0][i][j] = 255.0;
+                } else if (k == 2) {
+                    MatPict[1][i][j] = 255.0;
+                } else if (k == 3) {
+                    MatPict[2][i][j] = 255.0;
+                }
+            } else {
+                MatPict[0][i][j] = k;
+                MatPict[1][i][j] = k;
+                MatPict[2][i][j] = k;
             }
         }
     }
 
+    //---------------------------------------------------------------------
     // Fin Question 2
+    //---------------------------------------------------------------------
 
     // Save & Visu de MatPict
     SaveImagePpm((char*)OUTPUT_FILE, MatPict, HEIGHT, WIDTH);
