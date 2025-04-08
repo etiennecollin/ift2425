@@ -10,13 +10,13 @@
 //------------------------------------------------
 // FICHIERS INCLUS -------------------------------
 //------------------------------------------------
-#include <cmath>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
+#include <cmath>
 #include <new>
 
 /************************************************************************/
@@ -37,7 +37,7 @@ GC gc;
 #define CARRE(X) ((X) * (X))
 
 #define OUTPUT_FILE "Tp4-Img-I.pgm"
-#define VIEW_PGM "xv"
+#define VIEW_PGM "open"
 #define DEBUG 0
 
 // Cst-Modele
@@ -58,8 +58,8 @@ GC gc;
 
 // Cst-Runge-Kutta
 #define H 0.0001
-#define T_0 0.0     // Initial time
-#define T_F 30.0    // Final time 
+#define T_0 0.0   // Initial time
+#define T_F 30.0  // Final time
 #define NB_INTERV (T_F - T_0) / H
 
 // Cst-Image
@@ -390,7 +390,6 @@ void Fill_Pict(float** MatPts, float** MatPict, int PtsNumber, int NbPts) {
 ///////////////////////////////////////////////////////////////////////////////
 
 void f(float t, float u[4], float out[4]) {
-
     float x[3];
     x[0] = X_1;
     x[1] = X_2;
@@ -404,10 +403,10 @@ void f(float t, float u[4], float out[4]) {
     float sum1 = 0, sum2 = 0;
 
     for (int i = 0; i < 3; i++) {
-        float denom = pow(x[i] - u[0], 2) + pow(y[i] - u[2], 2) + pow(D, 2); // The denominator in the sum
-            
-        sum1 += (x[i] - u[0]) / pow(denom, 2.0 / 3.0);
-        sum2 += (y[i] - u[2]) / pow(denom, 2.0 / 3.0);
+        float denom = powf(x[i] - u[0], 2) + powf(y[i] - u[2], 2) + powf(D, 2);  // The denominator in the sum
+
+        sum1 += (x[i] - u[0]) / powf(denom, 2.0 / 3.0);
+        sum2 += (y[i] - u[2]) / powf(denom, 2.0 / 3.0);
     }
 
     float f0 = u[1];
@@ -421,110 +420,122 @@ void f(float t, float u[4], float out[4]) {
     out[3] = f3;
 }
 
-
 // Uses the Runge Kutta Fehlberg method
 // Updates the vector u
 // Out is related to the f function
-void calculate_next_rk_value(float t, float u[4], float out[4]) { 
-    
+void calculate_next_rk_value(float t, float u[4], float out[4]) {
+    // ================================================
     // Calculate k1
+    // ================================================
     f(t, u, out);
-    float k1[4];
 
+    float k1[4];
     for (int i = 0; i < 4; i++) {
         k1[i] = H * out[i];
     }
 
-    // Calculate k2 
+    // ================================================
+    // Calculate k2
+    // ================================================
     float temp[4];
-    
     for (int i = 0; i < 4; i++) {
-        temp[i] = u[i] + (1.0/4.0) * k1[i];
+        temp[i] = u[i] + (k1[i] / 4.0);
     }
+    f(t + (H / 4.0), temp, out);
 
-    f(t + (1.0 / 4.0) * H, temp, out);
+    // Compute k2
     float k2[4];
-
     for (int i = 0; i < 4; i++) {
         k2[i] = H * out[i];
     }
 
+    // ================================================
     // Calculate k3
-
+    // ================================================
     for (int i = 0; i < 4; i++) {
-        temp[i] = u[i] + (3.0 / 32.0) * k1[i] + (9.0/32.0) * k2[i];
+        temp[i] = u[i] + (3.0 / 32.0) * k1[i] + (9.0 / 32.0) * k2[i];
     }
+    f(t + (3.0 / 8.0) * H, temp, out);
 
-    f(t + (3.0/8.0) * H, temp, out);
     float k3[4];
-
     for (int i = 0; i < 4; i++) {
         k3[i] = H * out[i];
     }
 
+    // ================================================
     // Calculate k4
-
+    // ================================================
     for (int i = 0; i < 4; i++) {
-        temp[i] = u[i] + (1932.0 / 2197.0) * k1[i] + (7200.0 / 2197.0) * k2[i] + (7296.0 / 2197.0) * k3[i];
+        temp[i] = u[i] + (1932.0 / 2197.0) * k1[i] - (7200.0 / 2197.0) * k2[i] + (7296.0 / 2197.0) * k3[i];
     }
+    f(t + (12.0 / 13.0) * H, temp, out);
 
-    f(t + (12.0/13.0) * H, temp, out);
     float k4[4];
-
     for (int i = 0; i < 4; i++) {
         k4[i] = H * out[i];
     }
 
+    // ================================================
     // Calculate k5
+    // ================================================
     for (int i = 0; i < 4; i++) {
-        temp[i] = u[i] + (439.0 / 216.0) * k1[i] - 8 * k2[i] + 
-                  (3680.0 / 513.0) * k3[i] - 845.0 / 4104.0 * k4[i];
+        temp[i] = u[i] + (439.0 / 216.0) * k1[i] - 8 * k2[i] + (3680.0 / 513.0) * k3[i] - (845.0 / 4104.0) * k4[i];
     }
-
     f(t + H, temp, out);
-    float k5[4];
 
+    float k5[4];
     for (int i = 0; i < 4; i++) {
         k5[i] = H * out[i];
     }
 
+    // ================================================
     // Calculate k6
+    // ================================================
     for (int i = 0; i < 4; i++) {
-        temp[i] = u[i] - (8.0 / 27.0) * k1[i] + 2 * k2[i] +
-                  -(3544.0 / 2565.0) * k3[i] + 1859.0 / 4104.0 * k4[i] - (11.0 /40.0) * k5[i];
+        temp[i] = u[i] - (8.0 / 27.0) * k1[i] + 2.0 * k2[i] - (3544.0 / 2565.0) * k3[i] + 1859.0 / 4104.0 * k4[i] -
+                  (11.0 / 40.0) * k5[i];
     }
 
-    f(t + (1.0 / 2.0) * H, temp, out);
-    float k6[4];
+    f(t + (H / 2.0), temp, out);
 
+    float k6[4];
     for (int i = 0; i < 4; i++) {
         k6[i] = H * out[i];
     }
 
+    // ================================================
     // Update u
+    // ================================================
     for (int i = 0; i < 4; i++) {
-        u[i] = u[i] + (25.0 / 216.0) * k1[i] + (1408.0 / 2565.0) * k3[i] + (2.0 / 3.0) * k4[i] + (1.0 / 6.0) * k5[i];
+        u[i] = u[i] + (16.0 / 135.0) * k1[i] + (6656.0 / 12825.0) * k3[i] + (28561.0 / 56430.0) * k4[i] -
+               (9.0 / 50.0) * k5[i] + (2.0 / 55.0) * k6[i];
     }
 }
 
-
-void fill_Mat_Pts(float MatPts[(int)(NB_INTERV)][2], float x0, float y0) {
-
+void fill_Mat_Pts(float** MatPts) {
     // Initial conditions of ODE
     float u[4];
-    u[0] = x0;
-    u[1] = 0;
-    u[2] = y0;
-    u[3] = 0; 
+    u[0] = X_1_INI;
+    u[1] = X_2_INI;
+    u[2] = X_3_INI;
+    u[3] = X_4_INI;
 
-    float out[4]; // For f function
+    float out[4];  // For f function
 
     // Fill MatPts matrix
-    for (int k = 0; k < (int)(NB_INTERV); k++) {
-        MatPts[k][0] = u[0]; // u[0] = x
-        MatPts[k][1] = u[2]; // u[2] = y
-        calculate_next_rk_value((k + 1) * H, u, out); // Updates U
+    for (int k = T_0; k < (int)(NB_INTERV); k++) {
+        MatPts[k][0] = u[0];  // u[0] = x
+        MatPts[k][1] = u[2];  // u[2] = y
+
+        // Updates U
+        calculate_next_rk_value(k * H, u, out);
     }
+
+    // Print u
+    for (int i = 0; i < 4; i++) {
+        printf("u[%d] = %f\n", i, u[i]);
+    }
+    printf("===================================\n");
 }
 
 //----------------------------------------------------------
@@ -568,13 +579,14 @@ int main(int argc, char** argv) {
     // Un exemple ou la matrice de points est remplie
     // par une courbe donné par l'équation d'en bas... et non pas par
     // la solution de l'équation différentielle
+    fill_Mat_Pts(MatPts);
 
-    for (k = 0; k < (int)(NB_INTERV); k++) {
-        MatPts[k][0] = (k / (float)(NB_INTERV)) * cos((k * 0.0001) * 3.14159);
-        MatPts[k][1] = (k / (float)(NB_INTERV)) * sin((k * 0.001) * 3.14159);
-        // On peut essayer la ligne d'en bas aussi
-        // MatPts[k][1]=(k/(float)(NB_INTERV))*sin((k*0.0001)*3.14159);
-    }
+    // for (k = 0; k < (int)(NB_INTERV); k++) {
+    //     MatPts[k][0] = (k / (float)(NB_INTERV)) * cos((k * 0.0001) * 3.14159);
+    //     MatPts[k][1] = (k / (float)(NB_INTERV)) * sin((k * 0.001) * 3.14159);
+    //     // On peut essayer la ligne d'en bas aussi
+    //     // MatPts[k][1]=(k/(float)(NB_INTERV))*sin((k*0.0001)*3.14159);
+    // }
 
     // Fin Question 1---------------------------------------------------
 
