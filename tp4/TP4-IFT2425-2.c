@@ -756,9 +756,9 @@ int main(int argc, char** argv) {
             // Check how to color the pixel
             if (SHOW_COLORS) {
                 if (k == 1) {
-                    MatPict[0][i][j] = 255.0;
-                } else if (k == 2) {
                     MatPict[1][i][j] = 255.0;
+                } else if (k == 2) {
+                    MatPict[0][i][j] = 255.0;
                 } else if (k == 3) {
                     MatPict[2][i][j] = 255.0;
                 }
