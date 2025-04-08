@@ -40,29 +40,29 @@ GC gc;
 #define VIEW_PGM "open"
 #define DEBUG 0
 
-// Cst-Modele
+// Constants Model
 #define X_1 0.0
 #define Y_1 1.0
 #define X_2 -1.0 / sqrt(2.0)
 #define Y_2 -1.0 / 2.0
-#define X_3 +1.0 / 2 * sqrt(2.0)
+#define X_3 1.0 / sqrt(2.0)
 #define Y_3 -1.0 / 2.0
 #define C 0.25
 #define R 0.1
 #define D 0.3
 
-#define X_1_INI 0.2
-#define X_2_INI 0.0
-#define X_3_INI -1.6
-#define X_4_INI 0.0
+#define X_1_INI 0.2   // Initial x
+#define X_2_INI 0.0   // Initial x'
+#define X_3_INI -1.6  // Initial y
+#define X_4_INI 0.0   // Initial y'
 
-// Cst-Runge-Kutta
-#define H 0.0001
+// Constants Runge-Kutta
+#define H 0.0001  // Time step size
 #define T_0 0.0   // Initial time
 #define T_F 30.0  // Final time
 #define NB_INTERV (T_F - T_0) / H
 
-// Cst-Image
+// Constants Image
 #define WIDTH 512
 #define HEIGHT 512
 #define MAX_X 4.0
@@ -78,10 +78,10 @@ GC gc;
 //------------------------------------------------
 // GLOBAL CST ------------------------------------
 //------------------------------------------------
-float Xmin = 0.0;
-float Xmax = 0.0;
-float Ymin = 0.0;
-float Ymax = 0.0;
+float Xmin = -(MAX_X / 2.0);
+float Xmax = MAX_X / 2.0;
+float Ymin = -(MAX_Y / 2.0);
+float Ymax = MAX_Y / 2.0;
 
 float xx_1 = ((WIDTH / MAX_X) * X_1) + (WIDTH / 2);
 float yy_1 = (-(HEIGHT / MAX_Y) * Y_1) + (HEIGHT / 2);
@@ -405,13 +405,13 @@ void f(float t, float u[4], float out[4]) {
     for (int i = 0; i < 3; i++) {
         float denom = powf(x[i] - u[0], 2) + powf(y[i] - u[2], 2) + powf(D, 2);  // The denominator in the sum
 
-        sum1 += (x[i] - u[0]) / powf(denom, 2.0 / 3.0);
-        sum2 += (y[i] - u[2]) / powf(denom, 2.0 / 3.0);
+        sum1 += (x[i] - u[0]) / powf(denom, 3.0 / 2.0);
+        sum2 += (y[i] - u[2]) / powf(denom, 3.0 / 2.0);
     }
 
     float f0 = u[1];
-    float f1 = u[3];
-    float f2 = sum1 - R * u[1] - C * u[0];
+    float f1 = sum1 - R * u[1] - C * u[0];
+    float f2 = u[3];
     float f3 = sum2 - R * u[3] - C * u[2];
 
     out[0] = f0;
@@ -514,13 +514,11 @@ void calculate_next_rk_value(float t, float u[4], float out[4]) {
 
 void fill_Mat_Pts(float** MatPts) {
     // Initial conditions of ODE
-    float u[4];
-    u[0] = X_1_INI;
-    u[1] = X_2_INI;
-    u[2] = X_3_INI;
-    u[3] = X_4_INI;
+    // u[0] = x, u[1] = x', u[2] = y, u[3] = y'
+    float u[4] = {X_1_INI, X_2_INI, X_3_INI, X_4_INI};
 
-    float out[4];  // For f function
+    // For f function
+    float out[4] = {0.0, 0.0, 0.0, 0.0};
 
     // Fill MatPts matrix
     for (int k = T_0; k < (int)(NB_INTERV); k++) {
@@ -530,12 +528,6 @@ void fill_Mat_Pts(float** MatPts) {
         // Updates U
         calculate_next_rk_value(k * H, u, out);
     }
-
-    // Print u
-    for (int i = 0; i < 4; i++) {
-        printf("u[%d] = %f\n", i, u[i]);
-    }
-    printf("===================================\n");
 }
 
 //----------------------------------------------------------
@@ -573,22 +565,11 @@ int main(int argc, char** argv) {
     //---------------------------------------------------------------------
     // Question 1
     //---------------------------------------------------------------------
-
-    // Il faut travailler ici ...et dans > // FONCTIONS TPs
-
-    // Un exemple ou la matrice de points est remplie
-    // par une courbe donné par l'équation d'en bas... et non pas par
-    // la solution de l'équation différentielle
     fill_Mat_Pts(MatPts);
 
-    // for (k = 0; k < (int)(NB_INTERV); k++) {
-    //     MatPts[k][0] = (k / (float)(NB_INTERV)) * cos((k * 0.0001) * 3.14159);
-    //     MatPts[k][1] = (k / (float)(NB_INTERV)) * sin((k * 0.001) * 3.14159);
-    //     // On peut essayer la ligne d'en bas aussi
-    //     // MatPts[k][1]=(k/(float)(NB_INTERV))*sin((k*0.0001)*3.14159);
-    // }
-
-    // Fin Question 1---------------------------------------------------
+    //---------------------------------------------------------------------
+    // Fin Question 1
+    //---------------------------------------------------------------------
 
     // Affichage des Points dans MatPict
     plot_point(MatPts, MatPict, (int)(NB_INTERV));
@@ -604,9 +585,9 @@ int main(int argc, char** argv) {
     // Affiche Statistique
     printf("\n\n Stat:  Xmin=[%.2f] Xmax=[%.2f] Ymin=[%.2f] Ymax=[%.2f]\n", Xmin, Xmax, Ymin, Ymax);
 
-    //--------------------------------------------------------------------------------
-    //-------------- visu sous XWINDOW de l'évolution de MatPts ----------------------
-    //--------------------------------------------------------------------------------
+    //---------------------------------------------------------------------
+    //-------------- visu sous XWINDOW de l'évolution de MatPts -----------
+    //---------------------------------------------------------------------
     if (flag_graph) {
         // Uuverture Session Graphique
         if (open_display() < 0) {
