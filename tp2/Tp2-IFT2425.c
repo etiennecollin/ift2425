@@ -39,9 +39,7 @@ int open_display() {
     if ((display = XOpenDisplay(NULL)) == NULL) {
         printf("Connection impossible\n");
         return (-1);
-    }
-
-    else {
+    } else {
         screen_num = DefaultScreen(display);
         visual = DefaultVisual(display, screen_num);
         depth = DefaultDepth(display, screen_num);
@@ -305,8 +303,8 @@ XImage *cree_XimageWithMvt(float **matImg, float **vctMvt, int z, int length, in
 //-------------------------//
 //--- Fonctions Pour TP ---//
 //-------------------------//
-//---------------------------------------------------------
-//  Alloue de la memoire pour une matrice 1d de float
+//----------------------------------------------------------
+// Alloue de la memoire pour une matrice 1d de float
 //----------------------------------------------------------
 float *fmatrix_allocate_1d(int hsize) {
     float *matrix;
@@ -315,7 +313,7 @@ float *fmatrix_allocate_1d(int hsize) {
 }
 
 //----------------------------------------------------------
-//  Alloue de la memoire pour une matrice 2d de float
+// Alloue de la memoire pour une matrice 2d de float
 //----------------------------------------------------------
 float **fmatrix_allocate_2d(int vsize, int hsize) {
     int i;
@@ -359,7 +357,7 @@ void free_fmatrix_2d(float **pmat) {
 }
 
 //----------------------------------------------------------
-// libere la memoire de la matrice 3d de float
+// Libere la memoire de la matrice 3d de float
 //----------------------------------------------------------
 void free_fmatrix_3d(float ***pmat, int dsize) {
     int i;
@@ -813,7 +811,7 @@ int main(int argc, char **argv) {
         XPutImage(display, win_ppicture2, gc, x_ppicture2, 0, 0, 0, 0, x_ppicture2->width, x_ppicture2->height);
         XPutImage(display, win_ppicture3, gc, x_ppicture3, 0, 0, 0, 0, x_ppicture3->width, x_ppicture3->height);
 
-        usleep(10);  // si votre machine est lente mettre un nombre moins grand
+        usleep(10);  // Si votre machine est lente mettre un nombre moins grand
         if (k == (NBITER - 1)) {
             XDestroyImage(x_ppicture1);
             XDestroyImage(x_ppicture2);
