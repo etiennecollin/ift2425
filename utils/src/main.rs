@@ -2,7 +2,10 @@
 
 use nalgebra::{dmatrix, dvector};
 #[allow(unused_imports)]
-use utils::{cse::*, norms::*, polynomial_interpolation::*, root_search::*, systems::*, utils::*};
+use utils::{
+    derivation::*, error_propagation::*, integration::*, interpolation::*, linear_systems::*,
+    norms::*, root_search::*, utils::*,
+};
 
 const ITERATIONS_MAX: usize = 100;
 const X_TOLERANCE: f64 = 1e-5;
@@ -14,7 +17,8 @@ fn main() {
     // linear_systems();
     // norms();
     // non_linear_systems();
-    polynomial_interpolation();
+    // polynomial_interpolation();
+    derivative();
 }
 
 fn error_analysis() {
@@ -193,6 +197,7 @@ fn polynomial_interpolation() {
     let xs = [0.1, 0.5, 0.9, 1.3, 1.7];
     let fs = [0.09983, 0.47943, 0.78333, 0.96356, 0.99166];
     let x = 0.8;
+    let h = 0.4;
     let degree = 2;
 
     let _ = lagrange(degree, x, &xs, &fs);
@@ -208,6 +213,39 @@ fn polynomial_interpolation() {
     //     }
     // }
 
-    let _ = newton_gregory_forward(degree, x, &xs, &fs).unwrap();
-    let _ = scratch(degree, x, &xs, &fs).unwrap();
+    let _ = newton_gregory_forward(degree, x, h, &xs, &fs, true).unwrap();
+    let test = finite_diff_table(degree, &fs).unwrap();
+    let n = degree + 1;
+    for i in 0..n {
+        print!("{:>4}\t", xs[i]);
+        for j in 0..(n - i) {
+            print!("{:>4}\t", test[i][j]);
+        }
+        println!();
+    }
+}
+
+fn derivative() {
+    // let f: FuncSingle = |x: f64| match x {
+    //     2.3 => 0.34718,
+    //     2.4 => 0.31729,
+    //     2.5 => 0.28587,
+    //     2.6 => 0.25337,
+    //     2.7 => 0.22008,
+    //     _ => panic!("Invalid x value, x = {}", x),
+    // };
+    // let x = 2.5;
+    // let h_init = 0.1;
+    // let level = 1;
+    // let order = 1;
+    // let _ = richardson(f, x, h_init, level, order, false).unwrap();
+
+    let xs = [1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5];
+    let fs = [3.669, 4.482, 5.474, 6.686, 8.166, 9.974, 12.182];
+    let x_index = 2;
+    let h = 0.2;
+    let degree = 2;
+    let _ = newton_gregory_forward_derivative(degree, x_index, h, &xs, &fs).unwrap();
+
+    let _ = newton_gregory_derivative_error_estimate(degree, x_index, &xs, &fs, h);
 }

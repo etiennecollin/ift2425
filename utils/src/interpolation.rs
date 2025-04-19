@@ -31,7 +31,9 @@ pub fn lagrange(degree: usize, x: f64, xs: &[f64], fs: &[f64]) -> Result<f64, &'
 
     let mut sum = 0.0;
     for i in 0..=degree {
-        sum += polynomial(degree, i, x, xs)? / polynomial(degree, i, xs[i], xs)? * fs[i]
+        sum += lagrange_basis_polynomial(degree, i, x, xs)?
+            / lagrange_basis_polynomial(degree, i, xs[i], xs)?
+            * fs[i]
     }
 
     println!("╭───────────────");
@@ -50,7 +52,12 @@ pub fn lagrange(degree: usize, x: f64, xs: &[f64], fs: &[f64]) -> Result<f64, &'
 /// - `i`: The index of the basis polynomial.
 /// - `x`: The point at which to evaluate the polynomial.
 /// - `xs`: The x-coordinates of the data points.
-fn polynomial(degree: usize, i: usize, x: f64, xs: &[f64]) -> Result<f64, &'static str> {
+fn lagrange_basis_polynomial(
+    degree: usize,
+    i: usize,
+    x: f64,
+    xs: &[f64],
+) -> Result<f64, &'static str> {
     if degree > xs.len() - 1 {
         return Err("The degree must be less than the number of data points minus 1.");
     }
@@ -134,6 +141,40 @@ pub fn lagrange_polynomial_error_range(
     Ok((bound_min, bound_max))
 }
 
+/// Computes the finite difference table for a given degree and function values.
+///
+/// # Arguments
+///
+/// - `degree`: The degree of the polynomial.
+/// - `fs`: The function values.
+///
+/// # Returns
+///
+/// - An array that is `degree+1 x degree+1` such that `array[i][j]` contains `delta^j f_i`.
+pub fn finite_diff_table(degree: usize, fs: &[f64]) -> Result<Vec<Vec<f64>>, &'static str> {
+    let n = degree + 1;
+
+    if degree > fs.len() - 1 {
+        return Err("The degree must be less than the number of data points minus 1.");
+    }
+
+    let mut array = vec![vec![0.0; n]; n];
+
+    // Initialize the first column of the array with the function values
+    for i in 0..n {
+        array[i][0] = fs[i];
+    }
+
+    // Fill the finite difference table
+    for i in 1..n {
+        for j in 0..n - i {
+            array[j][i] = array[j + 1][i - 1] - array[j][i - 1];
+        }
+    }
+
+    Ok(array)
+}
+
 /// Computes the Forward Newton-Gregory interpolation polynomial at a given point `x`.
 ///
 /// This method assumes all x-coordinates are equally spaced.
@@ -142,13 +183,17 @@ pub fn lagrange_polynomial_error_range(
 ///
 /// - `degree`: The degree of the polynomial.
 /// - `x`: The point at which to evaluate the polynomial.
+/// - `h`: The spacing between the x-coordinates.
 /// - `xs`: The x-coordinates of the data points.
 /// - `fs`: The y-coordinates of the data points.
+/// - `choose`: If true, use the choose function to compute the finite differences.
 pub fn newton_gregory_forward(
     degree: usize,
     x: f64,
+    h: f64,
     xs: &[f64],
     fs: &[f64],
+    choose: bool,
 ) -> Result<f64, &'static str> {
     if xs.len() < 2 {
         return Err("The length of xs must be at least 2.");
@@ -167,65 +212,31 @@ pub fn newton_gregory_forward(
     }
 
     // Pre-compute the finite differences
-    let h = xs[1] - xs[0];
     let s = (x - xs[0]) / h;
 
     // Newton-Gregory Forward Polynomial Interpolation
+    let finite_diff = finite_diff_table(degree, fs)?;
     let mut result = fs[0];
     for k in 1..=degree {
-        let factor = delta_f_i(k, 0, fs) / factorial(k as u8)?;
-        let mut product = 1.0;
-        for j in 0..k {
-            product *= s - j as f64
+        if choose {
+            result += choose_float(s, k as u8)? * finite_diff[0][k];
+        } else {
+            let factor = finite_diff[0][k] / factorial(k as u8)?;
+            let mut product = 1.0;
+            for j in 0..k {
+                product *= s - j as f64
+            }
+            result += factor * product
         }
-        result += factor * product
     }
 
     println!("╭───────────────");
     println!("│ Newton-Gregory Forward Polynomial Interpolation");
     println!("├─");
     println!("│ Assuming equally spaced x-coordinates");
-    println!("├─");
-    println!("│ P_{}({}) = {}", degree, x, result);
-    println!("╰───────────────");
-
-    Ok(result)
-}
-
-pub fn scratch(degree: usize, x: f64, xs: &[f64], fs: &[f64]) -> Result<f64, &'static str> {
-    if xs.len() < 2 {
-        return Err("The length of xs must be at least 2.");
+    if choose {
+        println!("│ P_(n+1)(x) = P_n(x) + `s choose n+1` * delta^(n+1)f_0");
     }
-    if xs.len() != fs.len() {
-        return Err("The length of xs and fs must be equal.");
-    }
-    if !xs.iter().is_sorted() {
-        return Err("The x-coordinates must be sorted.");
-    }
-    if degree < 1 {
-        return Err("The degree must be at least 1.");
-    }
-    if degree > xs.len() - 1 {
-        return Err("The degree must be less than the number of data points minus 1.");
-    }
-
-    // Pre-compute the finite differences
-    let h = xs[1] - xs[0];
-    let s = (x - xs[0]) / h;
-
-    // Newton-Gregory Forward Polynomial Interpolation
-    let mut result = fs[0];
-    for n in 1..=degree {
-        result += choose_float(s, n as u64)? * delta_f_i(n, 0, fs);
-    }
-
-    // FIXME: This does not give the same result as newton_gregory_forward
-    // and it shouvlve be the same
-    println!("╭───────────────");
-    println!("│ Newton-Gregory Forward Polynomial Interpolation");
-    println!("├─");
-    println!("│ Assuming equally spaced x-coordinates");
-    println!("│ P_(n+1)(x) = P_n(x) + `s choose n+1` * delta^(n+1)f_0");
     println!("├─");
     println!("│ P_{}({}) = {}", degree, x, result);
     println!("╰───────────────");
@@ -237,42 +248,72 @@ pub fn newton_gregory_forward_error() -> Result<f64, &'static str> {
     todo!("Ch.4 p.21")
 }
 
-/// Computes the `delta`th finite difference of the `i`th element in the array `fs`.
-///
-/// # Arguments
-///
-/// - `delta`: The order of the finite difference.
-/// - `i`: The index of the element in the array.
-/// - `fs`: The array of function values.
-pub fn delta_f_i(delta: usize, i: usize, fs: &[f64]) -> f64 {
-    let mut dp = vec![vec![None; fs.len()]; delta + 1];
-    _delta_f_i(delta, i, fs, &mut dp)
+pub fn divided_difference() {
+    todo!("Ch.4 p.25")
 }
 
-/// Recursively computes the `delta`th finite difference of the `i`th element in the array `fs`.
-/// This function uses memoization to store previously computed results in the `dp` table.
-///
-/// # Arguments
-///
-/// - `delta`: The order of the finite difference.
-/// - `i`: The index of the element in the array.
-/// - `fs`: The array of function values.
-/// - `dp`: The memoization table.
-fn _delta_f_i(delta: usize, i: usize, fs: &[f64], dp: &mut [Vec<Option<f64>>]) -> f64 {
-    // Check if the value is already computed
-    if let Some(result) = dp[delta][i] {
-        return result;
-    }
+pub fn newton_divided_difference() {
+    todo!("Ch.4 p.26")
+}
 
-    // Base cases
-    let result = match delta {
-        0 => fs[i],
-        1 => fs[i + 1] - fs[i],
-        _ => _delta_f_i(delta - 1, i + 1, fs, dp) - _delta_f_i(delta - 1, i, fs, dp),
-    };
+pub enum SplineType {
+    Type1,
+    Type2,
+    Type3,
+    Type4,
+}
 
-    // Store the result in dp table for future reuse
-    dp[delta][i] = Some(result);
+pub fn spline(xs: &[f64], fs: &[f64], spline_type: SplineType) {
+    // Compute the h (distance between each points)
+    // Compute the S values
+    // Return the S values and Q equations
+    todo!("Ch.4 p.35,45,46")
+}
 
-    result
+pub fn tridiagonal_solve() {
+    todo!("Ch.4 p.55")
+}
+
+pub fn bezier() {
+    todo!("Ch.4 p.56")
+}
+
+pub fn bezier_mat() {
+    todo!("Ch.4 p.63")
+}
+
+pub fn bezier_3d() {
+    todo!("Ch.4 p.65")
+}
+
+pub fn bspline() {
+    todo!("Ch.4 p.68")
+}
+
+pub fn bspline_mat() {
+    todo!("Ch.4 p.69")
+}
+
+pub fn bspline_3d() {
+    todo!("Ch.4 p.74")
+}
+
+pub fn collocation_polynomial_surface() {
+    todo!("Ch.4 p.75")
+}
+
+/// Least Squares Interpolation
+pub fn linear_regression() {
+    todo!("Ch.4 p.84")
+}
+
+pub enum NonLinearRegressionType {
+    Polynomial,
+    Exponential,
+    Logarithmic,
+}
+
+/// Least Squares Interpolation
+pub fn nonlinear_regression(regression_type: NonLinearRegressionType) {
+    todo!("Ch.4 p.84")
 }

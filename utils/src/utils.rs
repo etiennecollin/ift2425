@@ -96,7 +96,7 @@ impl From<TableError> for &'static str {
 /// - `info`: A vector of strings representing the information to put at the top of the table.
 /// - `header`: A vector of strings representing the header of the table.
 /// - `rows`: A vector of strings representing the contents of the table.
-///     The columns of the rows should be comma-separated.
+///   The columns of the rows should be comma-separated.
 ///
 /// # Returns
 ///
@@ -164,23 +164,20 @@ pub fn factorial(num: u8) -> Result<f64, &'static str> {
     }
 
     let mut result = 1.0;
-    for x in 1..=num {
+    for x in 2..=num {
         result *= x as f64;
     }
     Ok(result)
 }
 
 /// Computes the binomial coefficient "n choose k".
-pub fn choose_float(n: f64, k: u64) -> Result<f64, &'static str> {
-    if k as f64 > n {
-        return Ok(0.0); // n choose k is 0 when k > n
-    }
+pub fn choose_float(n: f64, k: u8) -> Result<f64, &'static str> {
     if k == 0 || k as f64 == n {
         return Ok(1.0); // n choose 0 and n choose n are always 1
     }
 
     let product = (0..k).fold(1.0, |acc, i| acc * (n - i as f64));
-    let result = product / factorial(k as u8)?;
+    let result = product / factorial(k)?;
     Ok(result)
 }
 
