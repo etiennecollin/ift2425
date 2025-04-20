@@ -1,5 +1,7 @@
 #![allow(unused_variables, dead_code)]
 
+use std::f64::consts::{FRAC_PI_4, PI};
+
 use nalgebra::{dmatrix, dvector};
 #[allow(unused_imports)]
 use utils::{
@@ -18,7 +20,8 @@ fn main() {
     // norms();
     // non_linear_systems();
     // polynomial_interpolation();
-    derivative();
+    // derivative();
+    integration();
 }
 
 fn error_analysis() {
@@ -226,19 +229,19 @@ fn polynomial_interpolation() {
 }
 
 fn derivative() {
-    // let f: FuncSingle = |x: f64| match x {
-    //     2.3 => 0.34718,
-    //     2.4 => 0.31729,
-    //     2.5 => 0.28587,
-    //     2.6 => 0.25337,
-    //     2.7 => 0.22008,
-    //     _ => panic!("Invalid x value, x = {}", x),
-    // };
-    // let x = 2.5;
-    // let h_init = 0.1;
-    // let level = 1;
-    // let order = 1;
-    // let _ = richardson(f, x, h_init, level, order, false).unwrap();
+    let f: FuncSingle = |x: f64| match x {
+        2.3 => 0.34718,
+        2.4 => 0.31729,
+        2.5 => 0.28587,
+        2.6 => 0.25337,
+        2.7 => 0.22008,
+        _ => panic!("Invalid x value, x = {}", x),
+    };
+    let x = 2.5;
+    let h_init = 0.1;
+    let level = 1;
+    let order = 1;
+    let _ = richardson(f, x, h_init, level, order, false).unwrap();
 
     let xs = [1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5];
     let fs = [3.669, 4.482, 5.474, 6.686, 8.166, 9.974, 12.182];
@@ -247,5 +250,44 @@ fn derivative() {
     let degree = 2;
     let _ = newton_gregory_forward_derivative(degree, x_index, h, &xs, &fs).unwrap();
 
-    let _ = newton_gregory_derivative_error_estimate(degree, x_index, &xs, &fs, h);
+    // let _ = newton_gregory_derivative_error_estimate(degree, x_index, &xs, &fs, h);
+}
+
+fn integration() {
+    let xs = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
+    let fs = [0.0, 1.0, 8.0, 27.0, 64.0, 125.0, 216.0];
+    let h = 1.0;
+    let degree = 4;
+    let range = (0, 6);
+    // let _ = newton_cotes(degree, &xs, &fs, range).unwrap();
+
+    let f: FuncSingle = |x| x.sin();
+    let h = FRAC_PI_4;
+    let range = (0.0, PI);
+    let method = QuadratureMethod::Simpson38;
+    // let _ = composite_quadrature(f, h, range, method).unwrap();
+
+    let f: FuncSingle = |x| match x {
+        0.0 => 0.0,
+        0.2 => 0.199,
+        0.4 => 0.389,
+        0.6 => 0.565,
+        0.8 => 0.717,
+        _ => panic!("Invalid x value, x = {}", x),
+    };
+    let h_init = 0.2;
+    let range = (0.0, 0.8);
+    let levels = 2;
+    let _ = romberg(f, h_init, range, levels).unwrap();
+
+    // // Max value of the second derivative in the `range`
+    // let max_second_derivative = 1.0;
+    // let target_error = 5e-4;
+    // let _ = composite_quadrature_trapezoidal_error(max_second_derivative, h, range, target_error)
+    //     .unwrap();
+
+    let f: FuncSingle = |x| x.sin();
+    let degree = 3;
+    let range = (0.0, PI);
+    let _ = gaussian_quadrature(f, degree, range).unwrap();
 }

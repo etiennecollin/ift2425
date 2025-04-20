@@ -244,11 +244,11 @@ pub fn richardson(
 
     println!("╭───────────────");
     println!(
-        "│ Richardson's Extrapolation - {}",
+        "│ Derivative with Richardson's Extrapolation - {}",
         if accurate { "Accurate" } else { "Stable" }
     );
     println!("├─");
-    println!("│ n = {order}");
+    println!("│ order = n = {order}");
     println!("│ x = {x}");
 
     // Fill first column: central difference approximations at increasing h
@@ -266,28 +266,30 @@ pub fn richardson(
     println!("├─");
 
     // Apply Richardson extrapolation
+    let mut power_of_4 = 1;
     for j in 1..levels {
-        let mut power_of_4 = 1.0;
+        power_of_4 *= 4;
         for i in j..levels {
-            power_of_4 *= 4.0;
-
             if accurate {
-                r[i][j] = r[i][j - 1] + (r[i][j - 1] - r[i - 1][j - 1]) / (power_of_4 - 1.0);
+                r[i][j] = r[i][j - 1] + (r[i][j - 1] - r[i - 1][j - 1]) / (power_of_4 - 1) as f64;
                 println!(
-                    "│ f^{order}(x) = {:.4e} + ({:.4e} - {:.4e}) / ({power_of_4} - 1) = {:.6e}",
+                    "│ f^{order}(x) = {:.4e} + ({:.4e} - {:.4e}) / {} = {:.6e} + O(h^{})",
                     r[i][j - 1],
                     r[i][j - 1],
                     r[i - 1][j - 1],
-                    r[i][j]
+                    power_of_4 - 1,
+                    r[i][j],
+                    2 * (j + 1)
                 );
             } else {
-                r[i][j] = r[i - 1][j - 1] + (r[i - 1][j - 1] - r[i][j - 1]) / (power_of_4 - 1.0);
+                r[i][j] =
+                    r[i - 1][j - 1] + (r[i - 1][j - 1] - r[i][j - 1]) / (power_of_4 - 1) as f64;
                 println!(
                     "│ f^{order}(x) = {:.4e} + ({:.4e} - {:.4e}) / {} = {:.6e} + O(h^{})",
                     r[i - 1][j - 1],
                     r[i - 1][j - 1],
                     r[i][j - 1],
-                    power_of_4 - 1.0,
+                    power_of_4 - 1,
                     r[i][j],
                     2 * (j + 1)
                 );
