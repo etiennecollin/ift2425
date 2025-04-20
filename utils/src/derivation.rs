@@ -73,64 +73,41 @@ pub fn newton_gregory_forward_derivative(
     Ok(result)
 }
 
-/// FIXME: Does not work
-///
 /// Computes the error estimate for the Newton-Gregory derivative at the base point `x0`
 /// using the finite difference table.
 ///
 /// # Arguments
 ///
-/// - `degree`: Degree `n` of the Newton-Gregory polynomial.
-/// - `x`: The point at which to estimate the derivative.
+/// - `x_index`: The index of the point in the x-coordinates array.
 /// - `xs`: The x-coordinates of the data points.
-/// - `fs`: The function values.
 /// - `h`: Step size.
-/// - `interval_indices`: The indices in `xs` of the interval in which to estimate the error.
-///
-pub fn newton_gregory_derivative_error_estimate(
-    degree: usize,
+/// - `degree`: Degree `n` of the Newton-Gregory polynomial.
+/// - `derivative`: The derivative of order `degree + 1` to use for error estimation.
+pub fn newton_gregory_forward_derivative_error_estimate(
     x_index: usize,
     xs: &[f64],
-    fs: &[f64],
     h: f64,
+    degree: usize,
+    derivative: FuncSingle,
 ) -> Result<(f64, f64), &'static str> {
-    if xs.len() < 2 {
-        return Err("The length of xs must be at least 2.");
-    }
-    if degree > xs.len() - 1 {
-        return Err("The degree must be less than the number of data points minus 1.");
-    }
-
-    let mut x_min: (usize, f64) = (0, f64::INFINITY);
-    let mut x_max: (usize, f64) = (0, f64::NEG_INFINITY);
-
-    // Get min and max of xs
-    xs.iter().enumerate().for_each(|(i, &xi)| {
-        if xi < x_min.1 {
-            x_min = (i, xi);
-        }
-        if xi > x_max.1 {
-            x_max = (i, xi);
-        }
-    });
-
-    let finite_differences = finite_diff_table(fs.len() - 1, fs)?;
     let sign = if degree % 2 == 0 { 1.0 } else { -1.0 };
     let factor = sign / ((degree + 1) as f64) * h.powi(degree as i32);
-    let order = degree + 1;
 
-    let mut bound_min = finite_differences[x_min.0][order] / h.powi(order as i32) * factor;
-    let mut bound_max = finite_differences[x_max.0][order] / h.powi(order as i32) * factor;
+    let mut x_min = xs[x_index];
+    let mut x_max = xs[x_index + degree];
+    let mut bound_min = derivative(x_min) * factor;
+    let mut bound_max = derivative(x_max) * factor;
 
     // Get the min and max bounds
     if bound_min > bound_max {
         std::mem::swap(&mut bound_min, &mut bound_max);
+        std::mem::swap(&mut x_min, &mut x_max);
     }
 
     println!("╭───────────────");
     println!("│ Newton-Gregory Derivative Error Estimate");
     println!("├─");
-    println!("│ x={} <= E({}) <= x={}", x_min.1, xs[x_index], x_max.1);
+    println!("│ x={} <= E({}) <= x={}", x_min, xs[x_index], x_max);
     println!(
         "│ {:.6e} <= E({}) <= {:.6e}",
         bound_min, xs[x_index], bound_max

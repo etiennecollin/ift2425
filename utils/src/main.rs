@@ -20,8 +20,8 @@ fn main() {
     // norms();
     // non_linear_systems();
     // polynomial_interpolation();
-    // derivative();
-    integration();
+    derivative();
+    // integration();
 }
 
 fn error_analysis() {
@@ -245,12 +245,12 @@ fn derivative() {
 
     let xs = [1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5];
     let fs = [3.669, 4.482, 5.474, 6.686, 8.166, 9.974, 12.182];
+    let derivative: FuncSingle = |x| x.exp();
     let x_index = 2;
     let h = 0.2;
-    let degree = 2;
+    let degree = 1;
     let _ = newton_gregory_forward_derivative(degree, x_index, h, &xs, &fs).unwrap();
-
-    // let _ = newton_gregory_derivative_error_estimate(degree, x_index, &xs, &fs, h);
+    let _ = newton_gregory_forward_derivative_error_estimate(x_index, &xs, h, degree, derivative);
 }
 
 fn integration() {
