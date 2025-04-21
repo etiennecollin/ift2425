@@ -1,6 +1,6 @@
 use core::f64;
 
-use crate::utils::{FuncSingle, choose_float, factorial};
+use crate::utils::{FuncSingle, choose_float, factorial, table_formatter};
 
 /// Computes the Lagrange interpolation polynomial at a given point `x`.
 ///
@@ -29,15 +29,29 @@ pub fn lagrange(degree: usize, x: f64, xs: &[f64], fs: &[f64]) -> Result<f64, &'
         return Err("The degree must be less than the number of data points minus 1.");
     }
 
-    let mut sum = 0.0;
-    for i in 0..=degree {
-        sum += lagrange_basis_polynomial(degree, i, x, xs)?
-            / lagrange_basis_polynomial(degree, i, xs[i], xs)?
-            * fs[i]
-    }
-
     println!("╭───────────────");
     println!("│ Lagrange Polynomial Interpolation");
+    println!("├─");
+    println!("│ x = {}, degree = {}", x, degree);
+    println!(
+        "│ P_{}({}) = sum_(i=0)^{} π_i(x)/π_i(x_i) * y_i",
+        degree, x, degree
+    );
+    println!("│ π_i(x) = product_(j=0, j≠i)^{} (x - x_j)", degree);
+    println!("├─");
+    println!("│ sum = 0.0");
+
+    let mut sum = 0.0;
+    for i in 0..=degree {
+        let a = lagrange_basis_polynomial(degree, i, x, xs)?;
+        let b = lagrange_basis_polynomial(degree, i, xs[i], xs)?;
+        sum += a / b * fs[i];
+        println!(
+            "│ sum += π_{}({}) / π_{}({}) * y_{} = {:.4e} / {:.4e} * {:.4e}",
+            i, x, i, xs[i], i, a, b, fs[i]
+        );
+    }
+
     println!("├─");
     println!("│ P_{}({}) = {}", degree, x, sum);
     println!("╰───────────────");
@@ -141,7 +155,8 @@ pub fn lagrange_polynomial_error_range(
     Ok((bound_min, bound_max))
 }
 
-/// Computes the finite difference table for a given degree and function values.
+/// Computes the finite forward difference table for a given degree and function
+/// values.
 ///
 /// # Arguments
 ///
@@ -151,14 +166,14 @@ pub fn lagrange_polynomial_error_range(
 /// # Returns
 ///
 /// - An array that is `degree+1 x degree+1` such that `array[i][j]` contains `delta^j f_i`.
-pub fn finite_diff_table(degree: usize, fs: &[f64]) -> Result<Vec<Vec<f64>>, &'static str> {
+pub fn finite_forward_diff_table(degree: usize, fs: &[f64]) -> Result<Vec<Vec<f64>>, &'static str> {
     let n = degree + 1;
 
     if degree > fs.len() - 1 {
         return Err("The degree must be less than the number of data points minus 1.");
     }
 
-    let mut array = vec![vec![0.0; n]; n];
+    let mut array = vec![vec![0.0; degree + 1]; n];
 
     // Initialize the first column of the array with the function values
     for i in 0..n {
@@ -166,13 +181,162 @@ pub fn finite_diff_table(degree: usize, fs: &[f64]) -> Result<Vec<Vec<f64>>, &'s
     }
 
     // Fill the finite difference table
-    for i in 1..n {
-        for j in 0..n - i {
-            array[j][i] = array[j + 1][i - 1] - array[j][i - 1];
+    for j in 1..n {
+        for i in 0..n - j {
+            array[i][j] = array[i + 1][j - 1] - array[i][j - 1];
         }
     }
 
     Ok(array)
+}
+
+/// Computes the finite centered difference table for a given degree and function
+/// values.
+///
+/// # Arguments
+///
+/// - `degree`: The degree of the polynomial.
+/// - `xs`: The x-coordinates of the data points.
+/// - `fs`: The function values.
+///
+/// # Returns
+///
+/// - An array that is `degree+1 x degree+1` such that `array[i][j]` contains `delta^j f_i`.
+pub fn finite_centered_diff_table(
+    degree: usize,
+    xs: &[f64],
+    fs: &[f64],
+) -> Result<Vec<Vec<f64>>, &'static str> {
+    if xs.len() != fs.len() {
+        return Err("The length of xs and fs must be equal.");
+    }
+    if degree > xs.len() - 1 {
+        return Err("The degree must be less than the number of data points minus 1.");
+    }
+
+    let n_rows = degree + 1;
+    let n_cols = degree + 2;
+    let mut array = vec![vec![0.0; n_cols]; n_rows];
+
+    // Initialize the first columns of the array with xs and fs
+    for i in 0..n_rows {
+        array[i][0] = xs[i];
+        array[i][1] = fs[i];
+    }
+
+    // Fill the finite difference table
+    for j in 2..n_cols {
+        for i in 0..(n_rows - j + 1) {
+            let numerator = array[i + 1][j - 1] - array[i][j - 1];
+            let denominator = array[i + j - 1][0] - array[i][0];
+            if denominator == 0.0 {
+                return Err("Duplicate x values detected.");
+            }
+            array[i][j] = numerator / denominator;
+        }
+    }
+
+    Ok(array)
+}
+
+/// Formats the finite centered difference table into a string.
+/// This string, once printed, will look like a table.
+///
+/// # Arguments
+///
+/// - `table`: The finite centered difference table.
+pub fn finite_centered_diff_table_string(table: &[Vec<f64>]) -> Result<String, &'static str> {
+    let n_rows = table.len();
+    let n_cols = table[0].len();
+    let degree = n_cols - 2;
+
+    let info = vec![
+        "Finite Centered Difference Table".to_owned(),
+        format!("Degree: {}", degree),
+    ];
+
+    // Format the header
+    let mut header = vec!["x".to_owned(), "y".to_owned()];
+    for i in 1..=degree {
+        let mut content = Vec::new();
+        for j in 0..=i {
+            content.push(format!("x{}", j));
+        }
+        header.push(format!("∆^{}[{}]", i, content.join(", ")));
+    }
+
+    // Format the table rows
+    let mut rows = Vec::with_capacity(n_rows);
+    for (i, table_row) in table.iter().enumerate() {
+        let mut row = Vec::with_capacity(n_cols);
+        for (j, &value) in table_row.iter().enumerate() {
+            // Only print the values that are not empty
+            // (That's the upper triangular part of the table)
+            if j < n_cols - i {
+                row.push(format!("{:>2}", value));
+            } else {
+                row.push("".to_owned());
+            }
+        }
+        rows.push(row);
+    }
+
+    // Format and print the table
+    let table_string = table_formatter(info, header, rows)?;
+
+    Ok(table_string)
+}
+
+/// Formats the finite forward difference table into a string.
+/// This string, once printed, will look like a table.
+///
+/// # Arguments
+///
+/// - `xs`: The x-coordinates of the data points.
+/// - `table`: The finite forward difference table.
+pub fn finite_forward_diff_table_string(
+    xs: &[f64],
+    table: &[Vec<f64>],
+) -> Result<String, &'static str> {
+    let n_rows = table.len();
+    let n_cols = table[0].len();
+    let degree = n_cols - 1;
+
+    if xs.len() != n_rows {
+        return Err("The length of xs and table must be equal.");
+    }
+
+    let info = vec![
+        "Finite Forward Difference Table".to_owned(),
+        format!("Degree: {}", degree),
+    ];
+
+    // Format the header
+    let mut header = vec!["x".to_owned(), "y".to_owned()];
+    for i in 1..=degree {
+        header.push(format!("∆^{}y", i));
+    }
+
+    // Format the table rows
+    let mut rows = Vec::with_capacity(n_rows);
+    for (i, table_row) in table.iter().enumerate() {
+        let mut row = vec![xs[i].to_string()];
+        for (j, &value) in table_row.iter().enumerate() {
+            // Only print the values that are not empty
+            // (That's the upper triangular part of the table)
+            if j < n_cols - i {
+                row.push(format!("{:>2}", value));
+            } else {
+                row.push("".to_owned());
+            }
+        }
+        rows.push(row);
+    }
+
+    // Format and print the table
+    let table_string = table_formatter(info, header, rows)?;
+
+    Ok(table_string)
 }
 
 /// Computes the Forward Newton-Gregory interpolation polynomial at a given point `x`.
@@ -215,7 +379,7 @@ pub fn newton_gregory_forward(
     let s = (x - xs[0]) / h;
 
     // Newton-Gregory Forward Polynomial Interpolation
-    let finite_diff = finite_diff_table(degree, fs)?;
+    let finite_diff = finite_forward_diff_table(degree, fs)?;
     let mut result = fs[0];
     for k in 1..=degree {
         if choose {

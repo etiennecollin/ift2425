@@ -813,7 +813,7 @@ pub fn relaxation_solver(
 /// # Errors
 ///
 /// - If the sum of the absolute values of the partial derivatives is greater than 1.
-///     This is a necessary condition for the convergence of the fixed-point method.
+///   This is a necessary condition for the convergence of the fixed-point method.
 pub fn fixed_point_system(
     system: &[FuncMulti],
     x_initial: &DVector<f64>,

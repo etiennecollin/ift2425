@@ -19,8 +19,8 @@ fn main() {
     // linear_systems();
     // norms();
     // non_linear_systems();
-    // polynomial_interpolation();
-    derivative();
+    polynomial_interpolation();
+    // derivative();
     // integration();
 }
 
@@ -161,13 +161,13 @@ fn norms() {
 }
 
 fn non_linear_systems() {
-    let x_initial = dvector![-2.0, 1.0];
+    let x_initial = dvector![0.0, 0.0];
 
-    // #[rustfmt::skip]
-    // let system: Vec<FuncMulti> = vec![
-    //     |p| p[0].powi(2) + p[1].powi(2) - 4.0,
-    //     |p| p[0].exp() + p[1] - 1.0,
-    // ];
+    #[rustfmt::skip]
+    let system: Vec<FuncMulti> = vec![
+        |p| p[1].cos()/3.0 + 1.0/6.0,
+        |p| (0.5*p[0].powi(2) + 0.5).sqrt(),
+    ];
 
     // Newton's method
     // let _ = newton_system(
@@ -186,22 +186,22 @@ fn non_linear_systems() {
     // ];
 
     // Fixed-point method
-    // let _ = fixed_point_system(
-    //     &system,
-    //     &x_initial,
-    //     X_TOLERANCE,
-    //     F_X_TOLERANCE,
-    //     ITERATIONS_MAX,
-    // )
-    // .unwrap();
+    let _ = fixed_point_system(
+        &system,
+        &x_initial,
+        X_TOLERANCE,
+        F_X_TOLERANCE,
+        ITERATIONS_MAX,
+    )
+    .unwrap();
 }
 
 fn polynomial_interpolation() {
-    let xs = [0.1, 0.5, 0.9, 1.3, 1.7];
-    let fs = [0.09983, 0.47943, 0.78333, 0.96356, 0.99166];
-    let x = 0.8;
-    let h = 0.4;
-    let degree = 2;
+    let xs = [1.0, 2.0, 3.0, 4.0];
+    let fs = [4.0, -2.0, 3.0, 1.0];
+    let x = 3.0 / 2.0;
+    let h = 1.0;
+    let degree = 3;
 
     let _ = lagrange(degree, x, &xs, &fs);
 
@@ -217,15 +217,11 @@ fn polynomial_interpolation() {
     // }
 
     let _ = newton_gregory_forward(degree, x, h, &xs, &fs, true).unwrap();
-    let test = finite_diff_table(degree, &fs).unwrap();
-    let n = degree + 1;
-    for i in 0..n {
-        print!("{:>4}\t", xs[i]);
-        for j in 0..(n - i) {
-            print!("{:>4}\t", test[i][j]);
-        }
-        println!();
-    }
+    let table = finite_forward_diff_table(degree, &fs).unwrap();
+    println!("{}", finite_forward_diff_table_string(&xs, &table).unwrap());
+
+    let table = finite_centered_diff_table(degree, &xs, &fs).unwrap();
+    println!("{}", finite_centered_diff_table_string(&table).unwrap());
 }
 
 fn derivative() {

@@ -1,5 +1,5 @@
 use crate::{
-    interpolation::finite_diff_table,
+    interpolation::finite_forward_diff_table,
     utils::{FuncSingle, choose_float},
 };
 
@@ -41,7 +41,8 @@ pub fn newton_gregory_forward_derivative(
     }
 
     // Pre-compute the finite differences
-    let finite_diff = finite_diff_table(fs.len() - 1, fs)?;
+    // TODO: CHECK if degree is ok or keep fs.len()-1
+    let finite_diff = finite_forward_diff_table(degree, fs)?;
 
     println!("╭───────────────");
     println!("│ Newton-Gregory Forward Polynomial Interpolation Derivative");
