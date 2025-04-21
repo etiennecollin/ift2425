@@ -416,6 +416,13 @@ pub fn gauss_legendre_table(n: usize) -> Result<(Vec<f64>, Vec<f64>), &'static s
     }
 }
 
+/// Computes the integral of a function using Gaussian quadrature.
+///
+/// # Arguments
+///
+/// - `f`: The function to integrate.
+/// - `degree`: The degree of the polynomial to use.
+/// - `range`: A tuple (a, b) such that the integral is computed from x_a to x_b.
 pub fn gaussian_quadrature(
     f: FuncSingle,
     degree: usize,
