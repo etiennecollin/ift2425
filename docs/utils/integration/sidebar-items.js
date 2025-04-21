@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["QuadratureMethod"],"fn":["composite_quadrature","composite_quadrature_simpson13_error","composite_quadrature_simpson38_error","composite_quadrature_trapezoidal_error","gauss_legendre_table","gaussian_quadrature","newton_cotes","newton_cotes_error","romberg"]};

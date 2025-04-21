@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["EPSILON"],"enum":["TableError"],"fn":["compute_derivative","compute_gradient","function_vec","gradient_mat","table_formatter"],"type":["FuncMulti","FuncSingle"]};
+window.SIDEBAR_ITEMS = {"constant":["EPSILON"],"enum":["TableError"],"fn":["choose_float","compute_derivative","compute_gradient","factorial","function_vec","gradient_mat","table_formatter"],"type":["FuncMulti","FuncSingle"]};
