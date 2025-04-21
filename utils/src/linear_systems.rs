@@ -1,6 +1,6 @@
 use nalgebra::{DMatrix, DVector};
 
-use crate::utils::{function_vec, gradient_mat, table_formatter, FuncMulti};
+use crate::utils::{FuncMulti, function_vec, gradient_mat, table_formatter};
 
 /// Computes the solution of a linear system using Cramer's rule.
 ///
@@ -583,7 +583,7 @@ pub fn is_diagonally_dominant(a: &DMatrix<f64>) -> bool {
     true
 }
 
-/// Performs the Jacobi algorithm to solve the system Ax = b.
+/// Performs the Jacobi algorithm to solve the system `Ax = b`.
 ///
 /// # Arguments
 ///
@@ -648,10 +648,10 @@ pub fn jacobi_solver(
     Ok(x)
 }
 
-/// Performs the Gauss-Seidel algorithm to solve the system Ax = b.
+/// Performs the Gauss-Seidel algorithm to solve the system `Ax = b`.
 ///
 /// The difference between the Gauss-Seidel and Jacobi methods is that the
-/// Gauss-Seidel method uses the updated values of x in the same iteration.
+/// Gauss-Seidel method uses the updated values of `x` in the same iteration.
 ///
 /// # Arguments
 ///
@@ -721,13 +721,13 @@ pub fn gauss_seidel_solver(
     Ok(x)
 }
 
-/// Performs the relaxation method to solve the system Ax = b.
+/// Performs the relaxation method to solve the system `Ax = b`.
 ///
-/// Convergence usually only happens for 0<w<2.
+/// Convergence usually only happens for `0<w<2`.
 ///
-/// - If w<1, the method is called under-relaxation.
-/// - If w=1, the method is equivalent to the Gauss-Seidel method.
-/// - If w>1, the method is called over-relaxation.
+/// - If `w<1`, the method is called under-relaxation.
+/// - If `w=1`, the method is equivalent to the Gauss-Seidel method.
+/// - If `w>1`, the method is called over-relaxation.
 ///
 /// # Arguments
 ///
