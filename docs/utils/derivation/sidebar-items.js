@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["finite_difference_nth","newton_gregory_forward_derivative","newton_gregory_forward_derivative_error_estimate","richardson"]};

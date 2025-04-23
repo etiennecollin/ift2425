@@ -1,5 +1,9 @@
-pub mod cse;
+pub mod derivation;
+pub mod differential_equations;
+pub mod error_propagation;
+pub mod integration;
+pub mod interpolation;
+pub mod linear_systems;
 pub mod norms;
 pub mod root_search;
-pub mod systems;
 pub mod utils;

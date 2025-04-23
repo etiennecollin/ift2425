@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["cse","norms","root_search","systems","utils"]};
+window.SIDEBAR_ITEMS = {"mod":["derivation","differential_equations","error_propagation","integration","interpolation","linear_systems","norms","root_search","utils"]};

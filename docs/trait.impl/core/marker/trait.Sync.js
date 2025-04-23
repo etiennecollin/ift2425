@@ -1,9 +1,9 @@
 (function() {
-    var implementors = Object.fromEntries([["utils",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.84.1/core/marker/trait.Sync.html\" title=\"trait core::marker::Sync\">Sync</a> for <a class=\"enum\" href=\"utils/utils/enum.TableError.html\" title=\"enum utils::utils::TableError\">TableError</a>",1,["utils::utils::TableError"]]]]]);
+    var implementors = Object.fromEntries([["utils",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.86.0/core/marker/trait.Sync.html\" title=\"trait core::marker::Sync\">Sync</a> for <a class=\"enum\" href=\"utils/integration/enum.QuadratureMethod.html\" title=\"enum utils::integration::QuadratureMethod\">QuadratureMethod</a>",1,["utils::integration::QuadratureMethod"]],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.86.0/core/marker/trait.Sync.html\" title=\"trait core::marker::Sync\">Sync</a> for <a class=\"enum\" href=\"utils/interpolation/enum.NonLinearRegressionType.html\" title=\"enum utils::interpolation::NonLinearRegressionType\">NonLinearRegressionType</a>",1,["utils::interpolation::NonLinearRegressionType"]],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.86.0/core/marker/trait.Sync.html\" title=\"trait core::marker::Sync\">Sync</a> for <a class=\"enum\" href=\"utils/interpolation/enum.SplineType.html\" title=\"enum utils::interpolation::SplineType\">SplineType</a>",1,["utils::interpolation::SplineType"]],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.86.0/core/marker/trait.Sync.html\" title=\"trait core::marker::Sync\">Sync</a> for <a class=\"enum\" href=\"utils/utils/enum.TableError.html\" title=\"enum utils::utils::TableError\">TableError</a>",1,["utils::utils::TableError"]]]]]);
     if (window.register_implementors) {
         window.register_implementors(implementors);
     } else {
         window.pending_implementors = implementors;
     }
 })()
-//{"start":57,"fragment_lengths":[303]}
+//{"start":57,"fragment_lengths":[1321]}

@@ -1,7 +1,7 @@
 use nalgebra::{DMatrix, DVector};
 use tabled::{
     builder::Builder,
-    settings::{style::HorizontalLine, Panel, Style, Theme},
+    settings::{Panel, Style, Theme, style::HorizontalLine},
 };
 
 /// A f64 representing the perturbation used to compute the gradient.
@@ -96,7 +96,7 @@ impl From<TableError> for &'static str {
 /// - `info`: A vector of strings representing the information to put at the top of the table.
 /// - `header`: A vector of strings representing the header of the table.
 /// - `rows`: A vector of strings representing the contents of the table.
-///     The columns of the rows should be comma-separated.
+///   The columns of the rows should be comma-separated.
 ///
 /// # Returns
 ///
@@ -150,4 +150,110 @@ where
     let info_str = info.join("\n");
     table.with(theme).with(Panel::header(info_str));
     Ok(table.to_string())
+}
+
+/// Computes the factorial of a number.
+///
+/// # Errors
+///
+/// - If the number is greater than 170, an error is returned as this is the largest
+///   factorial that can be represented as a f64 without overflow.
+pub fn factorial(num: u8) -> Result<f64, &'static str> {
+    if num > 170 {
+        return Err("Cannot compute the factorial of a number greater than 170.");
+    }
+
+    let mut result = 1.0;
+    for x in 2..=num {
+        result *= x as f64;
+    }
+    Ok(result)
+}
+
+/// Computes the binomial coefficient "n choose k".
+pub fn choose_float(n: f64, k: u8) -> Result<f64, &'static str> {
+    if k == 0 || k as f64 == n {
+        return Ok(1.0); // n choose 0 and n choose n are always 1
+    }
+
+    let product = (0..k).fold(1.0, |acc, i| acc * (n - i as f64));
+    let result = product / factorial(k)?;
+    Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Test factorial of small numbers
+    #[test]
+    fn test_factorial_small_numbers() {
+        assert_eq!(factorial(0), Ok(1.0)); // 0! = 1
+        assert_eq!(factorial(1), Ok(1.0)); // 1! = 1
+        assert_eq!(factorial(2), Ok(2.0)); // 2! = 2
+        assert_eq!(factorial(3), Ok(6.0)); // 3! = 6
+        assert_eq!(factorial(4), Ok(24.0)); // 4! = 24
+        assert_eq!(factorial(5), Ok(120.0)); // 5! = 120
+    }
+
+    // Test factorial for the largest allowed number (170)
+    #[test]
+    fn test_factorial_170() {
+        assert!(factorial(170).is_ok()); // factorial(170) should not return an error
+    }
+
+    // Test that factorial of numbers greater than 170 returns an error
+    #[test]
+    fn test_factorial_greater_than_170() {
+        assert!(factorial(171).is_err(),);
+        assert!(factorial(200).is_err());
+    }
+
+    // Test that factorial returns correct large values
+    #[test]
+    fn test_factorial_large_numbers() {
+        // Here you can validate the factorial for some smaller large numbers if needed
+        // For instance, let's test factorial of 10, 15, 20
+        assert_eq!(factorial(10), Ok(3_628_800.0)); // 10! = 3,628,800
+        assert_eq!(factorial(15), Ok(1_307_674_368_000.0)); // 15! = 1,307,674,368,000
+        assert_eq!(factorial(20), Ok(2_432_902_008_176_640_000.0)); // 20! = 2,432,902,008,176,640,000
+    }
+
+    // Test that n choose 0 and n choose n are always 1
+    #[test]
+    fn test_n_choose_0_and_n_choose_n() {
+        assert_eq!(choose_float(5.0, 0), Ok(1.0)); // 5 choose 0 = 1
+        assert_eq!(choose_float(5.0, 5), Ok(1.0)); // 5 choose 5 = 1
+        assert_eq!(choose_float(10.0, 0), Ok(1.0)); // 10 choose 0 = 1
+        assert_eq!(choose_float(10.0, 10), Ok(1.0)); // 10 choose 10 = 1
+    }
+
+    // Test that n choose k returns 0 when k > n
+    #[test]
+    fn test_choose_greater_than_n() {
+        assert_eq!(choose_float(5.0, 6), Ok(0.0)); // 5 choose 6 = 0
+        assert_eq!(choose_float(10.0, 11), Ok(0.0)); // 10 choose 11 = 0
+    }
+
+    // Test symmetry: n choose k == n choose (n - k)
+    #[test]
+    fn test_choose_symmetry() {
+        assert_eq!(choose_float(5.0, 2), choose_float(5.0, 3)); // 5 choose 2 == 5 choose 3
+        assert_eq!(choose_float(10.0, 4), choose_float(10.0, 6)); // 10 choose 4 == 10 choose 6
+    }
+
+    // Test some common known values
+    #[test]
+    fn test_choose_common_values() {
+        assert_eq!(choose_float(5.0, 2), Ok(10.0)); // 5 choose 2 = 10
+        assert_eq!(choose_float(6.0, 3), Ok(20.0)); // 6 choose 3 = 20
+        assert_eq!(choose_float(7.0, 4), Ok(35.0)); // 7 choose 4 = 35
+    }
+
+    // Test large values
+    #[test]
+    fn test_choose_large_values() {
+        assert_eq!(choose_float(30.0, 15), Ok(155117520.0)); // 30 choose 15
+        assert_eq!(choose_float(20.0, 10), Ok(184756.0)); // 20 choose 10
+    }
 }
