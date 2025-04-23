@@ -388,6 +388,8 @@ pub fn make_triangular(
 ///
 /// - `matrix`: A square matrix of size `n x n`.
 /// - `b`: A vector of size `n`.
+/// - `backward_substitution`: A boolean indicating if backward or forward
+///   substitution should be used.
 ///
 /// # Errors
 ///

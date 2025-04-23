@@ -126,7 +126,12 @@ pub fn newton_gregory_forward_derivative_error_estimate(
 /// - `x`: Value of x to find derivative at.
 /// - `h`: Stepsize.
 /// - `order`: Order of the derivative to compute.
-fn finite_difference_nth(f: FuncSingle, x: f64, h: f64, order: u8) -> Result<f64, &'static str> {
+pub fn finite_difference_nth(
+    f: FuncSingle,
+    x: f64,
+    h: f64,
+    order: u8,
+) -> Result<f64, &'static str> {
     match order {
         0 => {
             let res = f(x);

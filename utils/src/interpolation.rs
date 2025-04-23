@@ -1,5 +1,7 @@
 use core::f64;
 
+use nalgebra::{Matrix2, Matrix4, Vector2};
+
 use crate::utils::{FuncSingle, choose_float, factorial, table_formatter};
 
 /// Computes the Lagrange interpolation polynomial at a given point `x`.
@@ -190,8 +192,8 @@ pub fn finite_forward_diff_table(degree: usize, fs: &[f64]) -> Result<Vec<Vec<f6
     Ok(array)
 }
 
-/// Computes the finite centered difference table for a given degree and function
-/// values.
+/// Computes the finite centered (or divided) difference table for a given
+/// degree and function values.
 ///
 /// # Arguments
 ///
@@ -239,7 +241,7 @@ pub fn finite_centered_diff_table(
     Ok(array)
 }
 
-/// Formats the finite centered difference table into a string.
+/// Formats the finite centered (or divided) difference table into a string.
 /// This string, once printed, will look like a table.
 ///
 /// # Arguments
@@ -412,10 +414,6 @@ pub fn newton_gregory_forward_error() -> Result<f64, &'static str> {
     todo!("Ch.4 p.21")
 }
 
-pub fn divided_difference() {
-    todo!("Ch.4 p.25")
-}
-
 pub fn newton_divided_difference() {
     todo!("Ch.4 p.26")
 }
@@ -467,8 +465,47 @@ pub fn collocation_polynomial_surface() {
 }
 
 /// Least Squares Interpolation
-pub fn linear_regression() {
-    todo!("Ch.4 p.84")
+///
+/// # Arguments
+///
+/// - `xs`: The x-coordinates of the data points.
+/// - `ys`: The y-coordinates of the data points.
+///
+/// # Returns
+///
+/// - A vector containing the coefficients `[a, b]` of the linear regression `y = ax+b`.
+pub fn linear_regression(xs: &[f64], fs: &[f64]) -> Result<Vector2<f64>, &'static str> {
+    let sumx = xs.iter().sum::<f64>();
+    let sumx_squared = xs.iter().map(|&x| x.powi(2)).sum::<f64>();
+    let sumy = fs.iter().sum::<f64>();
+    let sumxy = xs.iter().zip(fs).map(|(&x, &y)| x * y).sum::<f64>();
+    let a = Matrix2::new(sumx_squared, sumx, sumx, xs.len() as f64);
+    let b = Vector2::new(sumxy, sumy);
+
+    let x = match a.lu().solve(&b) {
+        Some(x) => x,
+        None => {
+            return Err("Matrix is singular");
+        }
+    };
+
+    println!("╭───────────────");
+    println!("│ Linear Regression");
+    println!("├─");
+    println!("│ AX = B");
+    println!("│ A_00 = sum(x_i^2) = {:.4e}", sumx_squared);
+    println!("│ A_01 = sum(x_i) = {:.4e}", sumx);
+    println!("│ A_10 = sum(x_i) = {:.4e}", sumx);
+    println!("│ A_11 = n = {}", xs.len());
+    println!("│ B_0 = sum(x_i * y_i) = {:.4e}", sumxy);
+    println!("│ B_1 = sum(y_i) = {:.4e}", sumy);
+    println!("├─");
+    println!("│ y = ax + b");
+    println!("│ a = {:.4e}", x[0]);
+    println!("│ b = {:.4e}", x[1]);
+    println!("╰───────────────");
+
+    Ok(x)
 }
 
 pub enum NonLinearRegressionType {

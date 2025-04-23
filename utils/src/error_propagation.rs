@@ -1,11 +1,13 @@
-use crate::utils::{compute_gradient, FuncMulti};
+use crate::utils::{FuncMulti, compute_gradient};
 
 /// Computes the position of the last significant digit in the error.
+///
+/// Gets the position `r` of the digit in `error` such that `error < 0.5 * 10^r`.
 ///
 /// # Arguments
 ///
 /// - `error`: The error on the function.
-fn compute_sig_position(error: f64) -> i32 {
+pub fn compute_sig_position(error: f64) -> i32 {
     (error * 2.0).log10().ceil() as i32
 }
 

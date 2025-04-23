@@ -1,4 +1,4 @@
-use crate::utils::FuncSingle;
+use crate::{derivation::finite_difference_nth, utils::FuncSingle};
 
 /// Computes the integral of a Newton-Gregory Forward Polynomial Interpolation
 /// using the Newton-Cotes formula.
@@ -160,13 +160,14 @@ pub fn composite_quadrature(
         return Err("The range is invalid.");
     }
 
-    let num_steps = ((range.1 - range.0) / h).ceil() as usize - 1;
-    let mut steps: Vec<f64> = Vec::with_capacity(num_steps);
+    let num_intervals = ((range.1 - range.0) / h).ceil() as usize;
+    let num_points = num_intervals - 1;
+    let mut points: Vec<f64> = Vec::with_capacity(num_points);
 
     // Fill points from range.0 to range.1 with step h
     // We skip the first and last points
-    for i in 1..=num_steps {
-        steps.push(f(range.0 + i as f64 * h));
+    for i in 1..=num_points {
+        points.push(f(range.0 + i as f64 * h));
     }
 
     println!("╭───────────────");
@@ -174,7 +175,8 @@ pub fn composite_quadrature(
     println!("│ Method: {}", method);
     println!("├─");
     println!("│ h: {}", h);
-    println!("│ num_steps: {} + 2", num_steps);
+    println!("│ num_intervals: {}", num_intervals);
+    println!("│ num_points: {} + 2", num_points);
     println!("│ range: ({}, {})", range.0, range.1);
     println!("├─");
 
@@ -183,7 +185,7 @@ pub fn composite_quadrature(
             println!("│ The error on the integral is O(h^2).");
             println!("├─");
             println!("│ Integral: h * (0.5f_a + f_1 + ... + f_(n-1) + 0.5f_b)");
-            (0.5 * f(range.0) + steps.iter().sum::<f64>() + 0.5 * f(range.1)) * h
+            (0.5 * f(range.0) + points.iter().sum::<f64>() + 0.5 * f(range.1)) * h
         }
         QuadratureMethod::Simpson13 => {
             println!("│ If f(x) is a polynomial of degree n <= 3, then the integral is exact.");
@@ -192,7 +194,7 @@ pub fn composite_quadrature(
             println!("│ Integral: h/3 * (f_a + 4f_1 + 2f_2 + 4f_3 + ... + 4f_(n-1) + f_b)");
 
             (f(range.0)
-                + steps
+                + points
                     .iter()
                     .enumerate()
                     // `i` is indexed from 0, but we want to start from 1
@@ -211,7 +213,7 @@ pub fn composite_quadrature(
             );
 
             (f(range.0)
-                + steps
+                + points
                     .iter()
                     .enumerate()
                     // `i` is indexed from 0, but we want to start from 1
@@ -239,8 +241,12 @@ pub fn composite_quadrature(
 /// - `h`: The step size.
 /// - `range`: A tuple (a, b) such that the integral is computed from x_a to x_b.
 /// - `target_error`: The target error for the integration.
+///
+/// # Returns
+///
+/// - The maximum error estimate for the Composite Trapezoidal Rule.
 pub fn composite_quadrature_trapezoidal_error(
-    max_second_derivative: f64,
+    f: FuncSingle,
     h: f64,
     range: (f64, f64),
     target_error: f64,
@@ -252,20 +258,76 @@ pub fn composite_quadrature_trapezoidal_error(
         return Err("The target error must be positive.");
     }
 
-    // Compute the maximum error
-    let range_length = range.1 - range.0;
-    let e_max = (-h.powi(2) * range_length * max_second_derivative.abs()) / 12.0;
+    let num_intervals = ((range.1 - range.0) / h).ceil() as usize;
+    let num_points = num_intervals - 1;
+    let mut points: Vec<f64> = Vec::with_capacity(num_points);
 
-    // Find required h to reach target error
-    let target_h = ((12.0 * target_error) / (range_length * max_second_derivative.abs())).sqrt();
-    // Find required number of intervals to reach target error
-    let target_n_intervals = (range_length / target_h).ceil();
+    // Fill points from range.0 to range.1 with step h
+    // We skip the first and last points
+    for i in 1..=num_points {
+        points.push(range.0 + i as f64 * h);
+    }
 
     println!("╭───────────────");
     println!("│ Composite Trapezoidal Rule Error Estimate");
     println!("├─");
     println!("│ h: {}", h);
     println!("│ range: ({}, {})", range.0, range.1);
+    println!("├─");
+    println!("│ Testing derivatives:");
+
+    // Find the maximum value of the second derivative
+    let mut max_derivative = 0.0;
+    let mut max_derivative_point = 0.0;
+
+    // Test first point
+    let derivative = (f(range.0 + 2.0 * h) - 2.0 * f(range.0 + h) + f(range.0)) / (h.powi(2));
+    if derivative.abs() > max_derivative {
+        max_derivative = derivative.abs();
+        max_derivative_point = range.0;
+    }
+    println!(
+        "│ x = {}, f''(x) ≈ (f(x + 2h) - 2f(x + h) + f(x)) / h^2 = {derivative:.4e}",
+        range.0
+    );
+
+    // Test middle points
+    for val in points.iter() {
+        print!("│ x = {}, ", *val);
+        let derivative = finite_difference_nth(f, *val, h, 2)?.abs();
+        if derivative > max_derivative {
+            max_derivative = derivative;
+            max_derivative_point = *val;
+        }
+    }
+
+    // Test last point
+    let derivative = (f(range.1 - 2.0 * h) - 2.0 * f(range.1 - h) + f(range.1)) / (h.powi(2));
+    if derivative.abs() > max_derivative {
+        max_derivative = derivative.abs();
+        max_derivative_point = range.1;
+    }
+    println!(
+        "│ x = {}, f''(x) ≈ (f(x - 2h) - 2f(x - h) + f(x)) / h^2 = {derivative:.4e}",
+        range.1
+    );
+
+    // Print max derivative
+    println!("├─");
+    println!(
+        "│ Max derivative: {} at x = {}",
+        max_derivative, max_derivative_point
+    );
+
+    // Compute the maximum error
+    let range_length = range.1 - range.0;
+    let e_max = (-h.powi(2) * range_length * max_derivative.abs()).abs() / 12.0;
+
+    // Find required h to reach target error
+    let target_h = ((12.0 * target_error) / (range_length * max_derivative.abs())).sqrt();
+    // Find required number of intervals to reach target error
+    let target_n_intervals = (range_length / target_h).ceil();
+
     println!("├─");
     println!("│ |E| <={:.6e}", e_max);
     println!("├─");
@@ -450,7 +512,6 @@ pub fn gaussian_quadrature(
     println!("├─");
     println!("│ Legendre nodes (t_i): {:?}", legendre.0);
     println!("│ Legendre weights (w_i): {:?}", legendre.1);
-    println!("│ Integral: w_0 * f(x_0) + ... + w_n * f(x_n)");
     println!("├─");
     println!("│ Variable change: x(t) = 0.5 * ((b - a)t + (a + b))");
 
@@ -475,7 +536,8 @@ pub fn gaussian_quadrature(
     let result = factor * integral;
 
     println!("├─");
-    println!("│ Factor: 0.5 * (b - a) = {}", factor);
+    println!("│ Integral: w_0 * f(x_0) + ... + w_n * f(x_n)");
+    println!("│ Factor: dx = 0.5 * (b - a) dt = {} dt", factor);
     println!("│ Integral: Factor * ({:.6e}) = {:.6e}", integral, result);
     println!("╰───────────────");
 
