@@ -1,6 +1,6 @@
 use core::f64;
 
-use nalgebra::{Matrix2, Matrix4, Vector2};
+use nalgebra::{Matrix2, Vector2};
 
 use crate::utils::{FuncSingle, choose_float, factorial, table_formatter};
 

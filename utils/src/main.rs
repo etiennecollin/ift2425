@@ -1,9 +1,8 @@
-#![allow(unused_variables, dead_code)]
+#![allow(unused_variables, unused_imports, dead_code)]
 
 use std::f64::consts::{FRAC_PI_4, PI};
 
-use nalgebra::{dmatrix, dvector};
-#[allow(unused_imports)]
+use nalgebra::{Matrix2, Matrix3, Vector2, Vector3, dmatrix, dvector};
 use utils::{
     derivation::*, error_propagation::*, integration::*, interpolation::*, linear_systems::*,
     norms::*, root_search::*, utils::*,
@@ -21,7 +20,7 @@ fn main() {
     // non_linear_systems();
     // interpolation();
     // derivative();
-    integration();
+    // integration();
 }
 
 fn error_analysis() {
@@ -236,8 +235,14 @@ fn interpolation() {
     // let table = finite_centered_diff_table(degree, &xs, &fs).unwrap();
     // println!("{}", finite_centered_diff_table_string(&table).unwrap());
 
-    // let xs = [1.0, 0.54, -0.416, -0.99];
-    // let fs = [2.0, 1.539, 0.582, 0.0];
+    // let xs: Vec<f64> = [0.0f64, 1.0f64, 2.0f64, 3.0f64]
+    //     .iter()
+    //     .map(|x| x.sin().powi(2))
+    //     .collect();
+    // let fs: Vec<f64> = [0.4f64, 1.2f64, 1.3f64, 0.44f64]
+    //     .iter()
+    //     .map(|x| x.exp())
+    //     .collect();
     // let vector = linear_regression(&xs, &fs).unwrap();
     // let x: f64 = 1.0;
     // let x_true = 4.66;

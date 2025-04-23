@@ -1,3 +1,5 @@
+#![allow(unused_variables)]
+
 pub mod derivation;
 pub mod differential_equations;
 pub mod error_propagation;
