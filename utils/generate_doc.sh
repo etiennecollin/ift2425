@@ -17,8 +17,7 @@ mkdir -p "$docs_path"
 cp -r ./target/doc/* "$docs_path"
 
 # Remove source code from the docs
-# TODO: Remove this line once the semester is over
-rm -rf "$docs_path/src"
+# rm -rf "$docs_path/src"
 
 # Add a redirect to the index page
 echo "<meta http-equiv=\"refresh\" content=\"0; url=$crate_name/index.html\">" >"$docs_path/index.html"
